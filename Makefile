@@ -1,12 +1,6 @@
 .PHONY: all example
 
-all: example busybox
-
-example:
-	$(MAKE) -C example
-
-busybox:
-	$(MAKE) -C busybox
+all: tcc
 
 tcc:
 	$(MAKE) -C tinycc
