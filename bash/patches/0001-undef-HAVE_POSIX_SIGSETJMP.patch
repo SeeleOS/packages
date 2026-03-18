@@ -1,0 +1,74 @@
+From f0f4c4e18cf1fd9a0c2707bf0e0680c2314df248 Mon Sep 17 00:00:00 2001
+From: elysia <3302843873@qq.com>
+Date: Thu, 19 Mar 2026 07:32:33 +0800
+Subject: [PATCH 1/2] undef HAVE_POSIX_SIGSETJMP
+
+---
+ config-bot.h            | 11 ++++++++++-
+ include/posixjmp.h      |  7 +++++++
+ lib/readline/posixjmp.h |  7 +++++++
+ 3 files changed, 24 insertions(+), 1 deletion(-)
+
+diff --git a/config-bot.h b/config-bot.h
+index 07e910f..48e95d6 100644
+--- a/config-bot.h
++++ b/config-bot.h
+@@ -50,9 +50,18 @@
+ #endif
+ 
+ /***********************************************************************/
+-/* Unset defines based on what configure reports as missing or broken. */
++/* Unset/adjust defines based on what configure reports as missing or   */
++/* broken.                                                              */
+ /***********************************************************************/
+ 
++/* On seele with relibc we override some configure decisions that are
++   based on runtime tests (which we cannot run when cross-compiling)
++   or that assume glibc-like behaviour. */
++#if defined (__seele__)
++  /* Force use of the plain setjmp/longjmp path instead of sigsetjmp. */
++#  undef HAVE_POSIX_SIGSETJMP
++#endif
++
+ /* Ultrix botches type-ahead when switching from canonical to
+    non-canonical mode, at least through version 4.3 */
+ #if !defined (HAVE_TERMIOS_H) || !defined (HAVE_TCGETATTR) || defined (ultrix)
+diff --git a/include/posixjmp.h b/include/posixjmp.h
+index 9c7e99e..92277f7 100644
+--- a/include/posixjmp.h
++++ b/include/posixjmp.h
+@@ -25,6 +25,13 @@
+ 
+ /* This *must* be included *after* config.h */
+ 
++/* On seele we currently do not provide sigsetjmp/siglongjmp in relibc,
++   so force bash to use plain setjmp/longjmp even if configure thought
++   POSIX sigsetjmp was available. */
++#if defined (__seele__)
++#  undef HAVE_POSIX_SIGSETJMP
++#endif
++
+ #if defined (HAVE_POSIX_SIGSETJMP)
+ #  define procenv_t	sigjmp_buf
+ 
+diff --git a/lib/readline/posixjmp.h b/lib/readline/posixjmp.h
+index 9c7e99e..c666156 100644
+--- a/lib/readline/posixjmp.h
++++ b/lib/readline/posixjmp.h
+@@ -25,6 +25,13 @@
+ 
+ /* This *must* be included *after* config.h */
+ 
++/* On seele we currently do not provide sigsetjmp/siglongjmp in relibc,
++   so force readline to use plain setjmp/longjmp even if configure thought
++   POSIX sigsetjmp was available. */
++#if defined (__seele__)
++#  undef HAVE_POSIX_SIGSETJMP
++#endif
++
+ #if defined (HAVE_POSIX_SIGSETJMP)
+ #  define procenv_t	sigjmp_buf
+ 
+-- 
+2.52.0
+

@@ -1,6 +1,9 @@
-.PHONY: all example
+.PHONY: all bash tcc
 
-all: tcc
+all: tcc bash
 
 tcc:
 	$(MAKE) -C tinycc
+
+bash:
+	$(MAKE) -C bash
