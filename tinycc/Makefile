@@ -4,12 +4,12 @@ PKG_NAME   := tinycc
 PKG_GIT    := https://github.com/TinyCC/tinycc.git
 PKG_COMMIT := fada98b
 
-WRKDIR  := $(BASE)/packages/work/$(PKG_NAME)
-WRKSRC  := $(WRKDIR)/src
+WORKDIR  := $(BASE)/packages/work/$(PKG_NAME)
+WORKSRC  := $(WORKDIR)/src
 
 PATCHDIR := $(BASE)/packages/$(PKG_NAME)/patches
 
-BUILD_DIR   := $(WRKSRC)/build
+BUILD_DIR   := $(WORKSRC)/build
 FULL_TARGET := $(BUILD_DIR)/tcc
 
 CC      := x86_64-elf-gcc
@@ -22,7 +22,7 @@ CFLAGS_SEELE  := -Wall -O2 \
                  -ffreestanding -D__seele__ -mno-red-zone \
                  -fno-stack-protector -fno-builtin -fno-pie -no-pie \
                  -nostdinc -I$(RELIBC_INCLUDE) \
-                 -I$(WRKSRC) -I$(WRKSRC)/include
+                 -I$(WORKSRC) -I$(WORKSRC)/include
 
 LDFLAGS_SEELE := -static -nostdlib \
                  $(RELIBC_PATH)/crt0.o \
@@ -36,23 +36,23 @@ all: build install
 
 fetch:
 	@echo "[packages][$(PKG_NAME)] fetch from git..."
-	@mkdir -p "$(WRKDIR)"
-	@if [ -d "$(WRKSRC)/.git" ]; then \
+	@mkdir -p "$(WORKDIR)"
+	@if [ -d "$(WORKSRC)/.git" ]; then \
 	  echo "  updating existing clone..."; \
-	  cd "$(WRKSRC)" && \
+	  cd "$(WORKSRC)" && \
 	    git fetch origin --tags && \
 	    git reset --hard "$(PKG_COMMIT)"; \
 	else \
 	  echo "  cloning fresh repo..."; \
-	  rm -rf "$(WRKSRC)"; \
-	  git clone "$(PKG_GIT)" "$(WRKSRC)"; \
-	  cd "$(WRKSRC)" && git checkout "$(PKG_COMMIT)"; \
+	  rm -rf "$(WORKSRC)"; \
+	  git clone "$(PKG_GIT)" "$(WORKSRC)"; \
+	  cd "$(WORKSRC)" && git checkout "$(PKG_COMMIT)"; \
 	fi
 
 patch: fetch
 	@echo "[packages][$(PKG_NAME)] applying patches from $(PATCHDIR)..."
 	@if ls "$(PATCHDIR)"/*.patch >/dev/null 2>&1; then \
-	  cd "$(WRKSRC)"; \
+	  cd "$(WORKSRC)"; \
 	  for p in "$(PATCHDIR)"/*.patch; do \
 	    echo "  -> $$p"; \
 	    patch -p1 < "$$p" || { echo "[ERROR] patch $$p failed"; exit 1; }; \
@@ -63,18 +63,18 @@ patch: fetch
 
 configure: patch
 	@echo "[packages][$(PKG_NAME)] configuring..."
-	@cd "$(WRKSRC)" && \
+	@cd "$(WORKSRC)" && \
 	  if [ ! -f config.mak ]; then \
 	    ./configure --prefix=/; \
 	  fi
 
 relibc:
 	@echo "[packages][$(PKG_NAME)] building relibc..."
-	@$(MAKE) -C "$(RELICB_ROOT)" all
+	@$(MAKE) -C "$(RELIBC_ROOT)" all
 
 build: configure relibc
 	@echo "[packages][$(PKG_NAME)] building TinyCC..."
-	@cd "$(WRKSRC)" && \
+	@cd "$(WORKSRC)" && \
 	  if [ ! -x ./c2str.exe ]; then \
 	    echo "Building host tool c2str.exe..."; \
 	    $(HOST_CC) -DC2STR conftest.c -o c2str.exe; \
@@ -111,7 +111,7 @@ install: build
 	 fi
 
 clean:
-	@echo "[packages][$(PKG_NAME)] cleaning $(WRKDIR)..."
-	@rm -rf "$(WRKDIR)"
+	@echo "[packages][$(PKG_NAME)] cleaning $(WORKDIR)..."
+	@rm -rf "$(WORKDIR)"
 
 distclean: clean
