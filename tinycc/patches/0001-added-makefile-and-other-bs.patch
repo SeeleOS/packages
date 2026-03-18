@@ -1,0 +1,28 @@
+From 5166ac50feefaf8dd34ebfbe45cbb920cd780c2e Mon Sep 17 00:00:00 2001
+From: elysia <3302843873@qq.com>
+Date: Tue, 17 Mar 2026 22:39:44 +0800
+Subject: [PATCH] added makefile and other bs
+
+---
+ tcc.h | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/tcc.h b/tcc.h
+index e7a2f1e2..cd45945c 100644
+--- a/tcc.h
++++ b/tcc.h
+@@ -192,6 +192,11 @@ extern long double strtold (const char *__nptr, char **__endptr);
+ # endif
+ #endif
+ 
++/* Seele OS: 目前只需要编译器本身，不启用 -run 等“本机执行”特性 */
++#ifdef __seele__
++# undef TCC_IS_NATIVE
++#endif
++
+ #if defined CONFIG_TCC_BACKTRACE && CONFIG_TCC_BACKTRACE==0
+ # undef CONFIG_TCC_BACKTRACE
+ #else
+-- 
+2.52.0
+
