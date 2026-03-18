@@ -7,3 +7,6 @@ example:
 
 busybox:
 	$(MAKE) -C busybox
+
+tcc:
+	$(MAKE) -C tinycc
