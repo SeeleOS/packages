@@ -34,6 +34,10 @@ LDFLAGS_SEELE := -static -nostdlib \
 
 LIBS_SEELE    := $(RELIBC_PATH)/libc.a \
                  $(RELIBC_PATH)/crtn.o
+RELIBC_DEPS   := $(RELIBC_PATH)/libc.a \
+                 $(RELIBC_PATH)/crt0.o \
+                 $(RELIBC_PATH)/crti.o \
+                 $(RELIBC_PATH)/crtn.o
 
 BUILD_TRIPLE := $(shell sh $(WORKSRC)/support/config.guess 2>/dev/null || echo x86_64-pc-linux-gnu)
 HOST_TRIPLE  ?= x86_64-unknown-none
@@ -107,6 +111,13 @@ relibc:
 
 build: $(CONFIGURE_STAMP) relibc
 	@echo "[packages][$(PKG_NAME)] building bash..."
+	@for dep in $(RELIBC_DEPS); do \
+	  if [ ! -f "$(FULL_TARGET)" ] || [ "$$dep" -nt "$(FULL_TARGET)" ]; then \
+	    echo "  relibc changed; forcing bash relink..."; \
+	    rm -f "$(FULL_TARGET)"; \
+	    break; \
+	  fi; \
+	done
 	@cd "$(BUILD_DIR)" && \
 	  $(MAKE) \
 	    ADDON_LDFLAGS='-Wl,--allow-multiple-definition' \
