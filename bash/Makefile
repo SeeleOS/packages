@@ -7,11 +7,15 @@ PKG_URL     := https://ftp.gnu.org/gnu/bash/$(PKG_TARBALL)
 
 WORKDIR  := $(BASE)/packages/work/$(PKG_NAME)
 WORKSRC  := $(WORKDIR)/src
+STAMPDIR := $(WORKDIR)/.stamp
 
 PATCHDIR := $(BASE)/packages/$(PKG_NAME)/patches
 
 BUILD_DIR   := $(WORKSRC)/build
 FULL_TARGET := $(BUILD_DIR)/bash
+FETCH_STAMP := $(STAMPDIR)/fetch
+PATCH_STAMP := $(STAMPDIR)/patch
+CONFIGURE_STAMP := $(STAMPDIR)/configure
 
 CC      := x86_64-elf-gcc
 AR      := x86_64-elf-ar
@@ -38,38 +42,52 @@ HOST_TRIPLE  ?= x86_64-unknown-none
 
 all: build install
 
-fetch:
-	@echo "[packages][$(PKG_NAME)] fetch from git..."
-	@mkdir -p "$(WORKDIR)"
-	@echo "  downloading $(PKG_URL)..."
-	@rm -rf "$(WORKSRC)" "$(WORKDIR)/$(PKG_TARBALL)"
-	@cd "$(WORKDIR)" && \
-	  if command -v curl >/dev/null 2>&1; then \
-	    curl -L -o "$(PKG_TARBALL)" "$(PKG_URL)"; \
-	  elif command -v wget >/dev/null 2>&1; then \
-	    wget -O "$(PKG_TARBALL)" "$(PKG_URL)"; \
-	  else \
-	    echo "[ERROR] neither curl nor wget found; cannot download tarball"; \
-	    exit 1; \
-	  fi && \
-	  mkdir -p src && \
-	  tar -xf "$(PKG_TARBALL)" --strip-components=1 -C src
+fetch: $(FETCH_STAMP)
 
-patch: fetch
+$(FETCH_STAMP):
+	@echo "[packages][$(PKG_NAME)] fetching sources..."
+	@mkdir -p "$(WORKDIR)" "$(STAMPDIR)"
+	@if [ ! -d "$(WORKSRC)" ]; then \
+	  echo "  downloading $(PKG_URL)..."; \
+	  rm -rf "$(WORKSRC)" "$(WORKDIR)/$(PKG_TARBALL)"; \
+	  cd "$(WORKDIR)" && \
+	    if command -v curl >/dev/null 2>&1; then \
+	      curl -L -o "$(PKG_TARBALL)" "$(PKG_URL)"; \
+	    elif command -v wget >/dev/null 2>&1; then \
+	      wget -O "$(PKG_TARBALL)" "$(PKG_URL)"; \
+	    else \
+	      echo "[ERROR] neither curl nor wget found; cannot download tarball"; \
+	      exit 1; \
+	    fi && \
+	    mkdir -p src && \
+	    tar -xf "$(PKG_TARBALL)" --strip-components=1 -C src; \
+	else \
+	  echo "  reusing existing source tree at $(WORKSRC)"; \
+	fi
+	@touch "$@"
+
+patch: $(PATCH_STAMP)
+
+$(PATCH_STAMP): $(FETCH_STAMP) $(wildcard $(PATCHDIR)/*.patch)
 	@echo "[packages][$(PKG_NAME)] applying patches from $(PATCHDIR)..."
+	@mkdir -p "$(STAMPDIR)"
+	@rm -f "$(CONFIGURE_STAMP)"
 	@if ls "$(PATCHDIR)"/*.patch >/dev/null 2>&1; then \
 	  cd "$(WORKSRC)"; \
 	  for p in "$(PATCHDIR)"/*.patch; do \
 	    echo "  -> $$p"; \
-	    patch -p1 < "$$p" || { echo "[ERROR] patch $$p failed"; exit 1; }; \
+	    patch -N -p1 < "$$p" || { echo "[ERROR] patch $$p failed"; exit 1; }; \
 	  done; \
 	else \
 	  echo "  no patches"; \
 	fi
+	@touch "$@"
 
-configure: patch
+configure: $(CONFIGURE_STAMP)
+
+$(CONFIGURE_STAMP): $(PATCH_STAMP)
 	@echo "[packages][$(PKG_NAME)] configuring..."
-	@mkdir -p "$(BUILD_DIR)"
+	@mkdir -p "$(BUILD_DIR)" "$(STAMPDIR)"
 	@cd "$(BUILD_DIR)" && \
 	  CC="$(CC)" AR="$(AR)" \
 	  CFLAGS="$(CFLAGS_SEELE)" \
@@ -81,12 +99,13 @@ configure: patch
 	    --prefix=/ \
 	    --disable-nls \
 	    --without-bash-malloc
+	@touch "$@"
 
 relibc:
 	@echo "[packages][$(PKG_NAME)] building relibc..."
 	@$(MAKE) -C "$(RELIBC_ROOT)" all
 
-build: configure relibc
+build: $(CONFIGURE_STAMP) relibc
 	@echo "[packages][$(PKG_NAME)] building bash..."
 	@cd "$(BUILD_DIR)" && \
 	  $(MAKE) \

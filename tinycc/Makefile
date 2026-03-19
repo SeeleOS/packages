@@ -6,11 +6,15 @@ PKG_COMMIT := fada98b
 
 WORKDIR  := $(BASE)/packages/work/$(PKG_NAME)
 WORKSRC  := $(WORKDIR)/src
+STAMPDIR := $(WORKDIR)/.stamp
 
 PATCHDIR := $(BASE)/packages/$(PKG_NAME)/patches
 
 BUILD_DIR   := $(WORKSRC)/build
 FULL_TARGET := $(BUILD_DIR)/tcc
+FETCH_STAMP := $(STAMPDIR)/fetch
+PATCH_STAMP := $(STAMPDIR)/patch
+CONFIGURE_STAMP := $(STAMPDIR)/configure
 
 CC      := x86_64-elf-gcc
 AR      := x86_64-elf-ar
@@ -34,45 +38,51 @@ LDFLAGS_SEELE := -static -nostdlib \
 
 all: build install
 
-fetch:
-	@echo "[packages][$(PKG_NAME)] fetch from git..."
-	@mkdir -p "$(WORKDIR)"
-	@if [ -d "$(WORKSRC)/.git" ]; then \
-	  echo "  updating existing clone..."; \
-	  cd "$(WORKSRC)" && \
-	    git fetch origin --tags && \
-	    git reset --hard "$(PKG_COMMIT)"; \
-	else \
-	  echo "  cloning fresh repo..."; \
+fetch: $(FETCH_STAMP)
+
+$(FETCH_STAMP):
+	@echo "[packages][$(PKG_NAME)] fetching sources..."
+	@mkdir -p "$(WORKDIR)" "$(STAMPDIR)"
+	@if [ ! -d "$(WORKSRC)/.git" ]; then \
+	  echo "  cloning $(PKG_GIT) at $(PKG_COMMIT)..."; \
 	  rm -rf "$(WORKSRC)"; \
 	  git clone "$(PKG_GIT)" "$(WORKSRC)"; \
 	  cd "$(WORKSRC)" && git checkout "$(PKG_COMMIT)"; \
+	else \
+	  echo "  reusing existing clone at $(WORKSRC)"; \
 	fi
+	@touch "$@"
 
-patch: fetch
+patch: $(PATCH_STAMP)
+
+$(PATCH_STAMP): $(FETCH_STAMP) $(wildcard $(PATCHDIR)/*.patch)
 	@echo "[packages][$(PKG_NAME)] applying patches from $(PATCHDIR)..."
+	@mkdir -p "$(STAMPDIR)"
+	@rm -f "$(CONFIGURE_STAMP)"
 	@if ls "$(PATCHDIR)"/*.patch >/dev/null 2>&1; then \
 	  cd "$(WORKSRC)"; \
 	  for p in "$(PATCHDIR)"/*.patch; do \
 	    echo "  -> $$p"; \
-	    patch -p1 < "$$p" || { echo "[ERROR] patch $$p failed"; exit 1; }; \
+	    patch -N -p1 < "$$p" || { echo "[ERROR] patch $$p failed"; exit 1; }; \
 	  done; \
 	else \
 	  echo "  no patches"; \
 	fi
+	@touch "$@"
 
-configure: patch
+configure: $(CONFIGURE_STAMP)
+
+$(CONFIGURE_STAMP): $(PATCH_STAMP)
 	@echo "[packages][$(PKG_NAME)] configuring..."
-	@cd "$(WORKSRC)" && \
-	  if [ ! -f config.mak ]; then \
-	    ./configure --prefix=/; \
-	  fi
+	@mkdir -p "$(STAMPDIR)"
+	@cd "$(WORKSRC)" && ./configure --prefix=/
+	@touch "$@"
 
 relibc:
 	@echo "[packages][$(PKG_NAME)] building relibc..."
 	@$(MAKE) -C "$(RELIBC_ROOT)" all
 
-build: configure relibc
+build: $(CONFIGURE_STAMP) relibc
 	@echo "[packages][$(PKG_NAME)] building TinyCC..."
 	@cd "$(WORKSRC)" && \
 	  if [ ! -x ./c2str.exe ]; then \

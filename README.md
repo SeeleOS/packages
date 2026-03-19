@@ -21,9 +21,9 @@ Each package directory (`packages/<name>/`) has:
 
 - `Makefile` – package recipe, usually implementing:
 
-  - `fetch`      – get source (tarball or git clone)
-  - `patch`      – apply `patches/*.patch` on top of a clean tree
-  - `configure`  – run upstream configure step if needed
+  - `fetch`      – get source (tarball or git clone), normally cached under `work/<pkg>/`
+  - `patch`      – apply `patches/*.patch` once per source tree
+  - `configure`  – run upstream configure step if needed and cache it with stamps
   - `build`      – build with the Seele cross‑toolchain and `relibc-seele`
   - `install`    – install into `$(INSTALL_DIR)/<name>` and do a basic size check
   - `clean`      – remove that package’s `work/<name>` directory
@@ -31,6 +31,9 @@ Each package directory (`packages/<name>/`) has:
 All temporary output (unpacked sources, build artifacts, etc.) lives under:
 
 - `work/<pkg>/...`
+
+Most package recipes should keep fetch/patch/configure incremental by storing stamp files under
+`work/<pkg>/.stamp/`, so rebuilding after a `relibc` change does not redownload or unpack sources.
 
 You can delete `work/` at any time; the next build will recreate it.
 
