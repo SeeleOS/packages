@@ -1,0 +1,41 @@
+diff --git a/include/platform.h b/include/platform.h
+index ea0512f..9f63957 100644
+--- a/include/platform.h
++++ b/include/platform.h
+@@ -165,7 +165,17 @@
+ # define bswap_32 __bswap32
+ # define bswap_16 __bswap16
+ #else
+-# include <byteswap.h>
++# if defined(__has_include)
++#  if __has_include(<byteswap.h>)
++#   include <byteswap.h>
++#  else
++#   define bswap_16(x) __builtin_bswap16(x)
++#   define bswap_32(x) __builtin_bswap32(x)
++#   define bswap_64(x) __builtin_bswap64(x)
++#  endif
++# else
++#  include <byteswap.h>
++# endif
+ # include <endian.h>
+ #endif
+ 
+@@ -494,6 +504,17 @@ typedef unsigned smalluint;
+ # undef HAVE_STRCHRNUL
+ #endif
+ 
++#if defined(__seele__)
++# undef HAVE_CLEARENV
++# undef HAVE_MEMPCPY
++# undef HAVE_MNTENT_H
++# undef HAVE_STRVERSCMP
++# undef HAVE_SYS_STATFS_H
++# undef HAVE_UNLOCKED_LINE_OPS
++# undef HAVE_UNLOCKED_STDIO
++# define vfork fork
++#endif
++
+ #if defined(__APPLE__)
+ # undef HAVE_STRCHRNUL
+ #endif

@@ -1,9 +1,14 @@
-.PHONY: all bash tcc
+.PHONY: all bash tcc busybox
 
-all: tcc bash
+basic: tcc bash busybox
+
+all: tcc bash busybox
 
 tcc:
 	$(MAKE) -C tinycc
 
 bash:
 	$(MAKE) -C bash
+
+busybox:
+	$(MAKE) -C busybox
