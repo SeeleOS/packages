@@ -4,6 +4,7 @@ PKG_NAME    := busybox
 PKG_VER     := 1.37.0
 PKG_TARBALL := busybox-$(PKG_VER).tar.bz2
 PKG_URL     := https://busybox.net/downloads/$(PKG_TARBALL)
+PKG_MIRROR_URL := https://mirrors.aliyun.com/slackware/slackware64-current/source/installer/sources/busybox/$(PKG_TARBALL)
 
 WORKDIR   := $(BASE)/packages/work/$(PKG_NAME)
 WORKSRC   := $(WORKDIR)/src
@@ -13,7 +14,7 @@ CONFIG_IN := $(BASE)/packages/$(PKG_NAME)/seele.config
 
 BUILD_DIR       := $(WORKSRC)/build
 FULL_TARGET     := $(BUILD_DIR)/busybox
-BUILD_CONFIG    := $(BUILD_DIR)/seele.config
+BUILD_CONFIG    := $(BUILD_DIR)/.config
 FETCH_STAMP     := $(STAMPDIR)/fetch
 PATCH_STAMP     := $(STAMPDIR)/patch
 CONFIGURE_STAMP := $(STAMPDIR)/configure
@@ -46,12 +47,14 @@ $(FETCH_STAMP):
 	@echo "[packages][$(PKG_NAME)] fetching sources..."
 	@mkdir -p "$(WORKDIR)" "$(STAMPDIR)"
 	@if [ ! -d "$(WORKSRC)" ]; then \
-	  echo "  downloading $(PKG_URL)..."; \
+	  echo "  downloading $(PKG_TARBALL)..."; \
 	  rm -rf "$(WORKSRC)" "$(WORKDIR)/$(PKG_TARBALL)"; \
 	  cd "$(WORKDIR)" && \
 	    if command -v curl >/dev/null 2>&1; then \
-	      curl -L -o "$(PKG_TARBALL)" "$(PKG_URL)"; \
+	      curl -L -f -o "$(PKG_TARBALL)" "$(PKG_MIRROR_URL)" || \
+	      curl -L -f -o "$(PKG_TARBALL)" "$(PKG_URL)"; \
 	    elif command -v wget >/dev/null 2>&1; then \
+	      wget -O "$(PKG_TARBALL)" "$(PKG_MIRROR_URL)" || \
 	      wget -O "$(PKG_TARBALL)" "$(PKG_URL)"; \
 	    else \
 	      echo "[ERROR] neither curl nor wget found; cannot download tarball"; \
@@ -83,17 +86,31 @@ $(PATCH_STAMP): $(FETCH_STAMP) $(wildcard $(PATCHDIR)/*.patch)
 
 configure: $(CONFIGURE_STAMP)
 
-$(CONFIGURE_STAMP): $(PATCH_STAMP)
+$(CONFIGURE_STAMP): $(PATCH_STAMP) $(CONFIG_IN)
 	@echo "[packages][$(PKG_NAME)] configuring..."
 	@mkdir -p "$(BUILD_DIR)" "$(STAMPDIR)"
-	@cp "$(CONFIG_IN)" "$(BUILD_CONFIG)"
+	@rm -f "$(BUILD_CONFIG)"
+	@$(MAKE) -C "$(WORKSRC)" O="$(BUILD_DIR)" HOSTCC="$(HOST_CC)" allnoconfig >/dev/null
+	@while IFS= read -r line; do \
+		case "$$line" in \
+			''|'#'*) continue ;; \
+			CONFIG_*=*) \
+				key=$${line%%=*}; \
+				val=$${line#*=}; \
+				sed -i -e "/^$$key=/d" -e "/^# $$key is not set$$/d" "$(BUILD_CONFIG)"; \
+				if [ "$$val" = "n" ]; then \
+					printf '# %s is not set\n' "$$key" >> "$(BUILD_CONFIG)"; \
+				else \
+					printf '%s=%s\n' "$$key" "$$val" >> "$(BUILD_CONFIG)"; \
+				fi ;; \
+		esac; \
+	done < "$(CONFIG_IN)"
 	@printf '%s\n' \
 	  'CONFIG_EXTRA_CFLAGS="$(CFLAGS_SEELE)"' \
 	  'CONFIG_EXTRA_LDFLAGS="$(LDFLAGS_SEELE)"' \
 	  'CONFIG_EXTRA_LDLIBS="$(LDLIBS_SEELE)"' \
 	  >> "$(BUILD_CONFIG)"
-	@KCONFIG_ALLCONFIG="$(BUILD_CONFIG)" \
-		$(MAKE) -C "$(WORKSRC)" O="$(BUILD_DIR)" HOSTCC="$(HOST_CC)" allnoconfig
+	@yes "" | $(MAKE) -C "$(WORKSRC)" O="$(BUILD_DIR)" HOSTCC="$(HOST_CC)" oldconfig >/dev/null
 	@touch "$@"
 
 relibc:
@@ -119,6 +136,11 @@ build: $(CONFIGURE_STAMP) relibc
 install: build
 	@echo "[packages][$(PKG_NAME)] installing busybox symlinks into $(INSTALL_DIR)..."
 	@mkdir -p "$(INSTALL_DIR)"
+	@cd "$(BUILD_DIR)" && \
+		HOSTCC="$(HOST_CC)" "$(WORKSRC)/applets/busybox.mkll" \
+			"$(BUILD_DIR)/include/autoconf.h" \
+			"$(WORKSRC)/include/applets.h" \
+			> busybox.links
 	@cd "$(BUILD_DIR)" && \
 		sudo "$(WORKSRC)/applets/install.sh" "$(INSTALL_DIR)" --cleanup || true
 	@cd "$(BUILD_DIR)" && \
