@@ -9,35 +9,47 @@ use crate::types::{Action, Context, PackagePaths, Result};
 
 pub trait MetaPackage: Package {
     fn packages(&self) -> Vec<impl Package>;
-    fn fetch(&self, _ctx: &Context) -> Result<()> {
-        meta_panic()
-    }
-
-    fn patch(&self, ctx: &Context) -> Result<()> {
-        meta_panic()
-    }
-
-    fn configure(&self, _ctx: &Context) -> Result<()> {
-        meta_panic()
-    }
-
-    fn build(&self, _ctx: &Context) -> Result<()> {
-        meta_panic()
-    }
-
-    fn install(&self, _ctx: &Context) -> Result<()> {
-        meta_panic()
-    }
-
-    fn make(&self, ctx: &Context) -> Result<()> {
-        for package in self.packages() {
-            package.make(ctx)?;
-        }
-
-        Ok(())
-    }
 }
 
-fn meta_panic() -> ! {
+#[macro_export]
+macro_rules! make_meta_package {
+    ($name: literal, $type: ty) => {
+        impl Package for $type {
+            fn name(&self) -> &'static str {
+                $name
+            }
+
+            fn fetch(&self, _ctx: &$crate::types::Context) -> $crate::types::Result<()> {
+                $crate::meta_pkg::meta_panic()
+            }
+
+            fn patch(&self, _ctx: &$crate::types::Context) -> $crate::types::Result<()> {
+                $crate::meta_pkg::meta_panic()
+            }
+
+            fn configure(&self, _ctx: &$crate::types::Context) -> $crate::types::Result<()> {
+                $crate::meta_pkg::meta_panic()
+            }
+
+            fn build(&self, _ctx: &$crate::types::Context) -> $crate::types::Result<()> {
+                $crate::meta_pkg::meta_panic()
+            }
+
+            fn install(&self, _ctx: &$crate::types::Context) -> $crate::types::Result<()> {
+                $crate::meta_pkg::meta_panic()
+            }
+
+            fn make(&self, ctx: &$crate::types::Context) -> $crate::types::Result<()> {
+                for package in self.packages() {
+                    package.make(ctx)?;
+                }
+
+                Ok(())
+            }
+        }
+    };
+}
+
+pub fn meta_panic() -> ! {
     panic!("Meta packages doesnt support this.")
 }
