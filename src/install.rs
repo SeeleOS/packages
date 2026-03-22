@@ -21,10 +21,14 @@ pub trait Install: Package {
         self.build(ctx)?;
         let source = paths.build.join(self.binary_name());
         let target = ctx.install_dir.join(self.install_name());
-        println!("[packages][tinycc] installing {}...", target.display());
+        println!(
+            "[packages][{}] installing {}...",
+            self.name(),
+            target.display()
+        );
         copy_file_with_sudo(&source, &target)?;
         verify_same_size(&source, &target)?;
-        println!("[packages][tinycc][OK]: installation verified.");
+        println!("[packages][{}][OK]: installation verified.", self.name());
         Ok(())
     }
 }

@@ -1,9 +1,12 @@
+use std::fmt::format;
+
+use crate::build::{CC, build_relibc};
 use crate::command::{CommandSpec, run};
 use crate::fetch::GitCloneFetch;
 use crate::fs_utils::{copy_file_with_sudo, ensure_dir, remove_if_exists, touch, verify_same_size};
 use crate::install::Install;
 use crate::r#trait::Package;
-use crate::types::{Context, Result};
+use crate::types::{Context, RecipePaths, Result};
 use crate::{fetch_wrap, install_wrap};
 
 pub struct TinyCc;
@@ -35,44 +38,47 @@ impl Package for TinyCc {
     fn build(&self, ctx: &Context) -> Result<()> {
         let paths = self.paths(ctx);
         self.configure(ctx)?;
-        println!("[packages][tinycc] building relibc...");
-        run(CommandSpec::new("make")
-            .arg("-C")
-            .arg(&ctx.relibc_root)
-            .arg("all"))?;
-        println!("[packages][tinycc] building TinyCC...");
+
+        build_relibc(ctx)?;
         ensure_dir(&paths.build)?;
 
-        let c2str = paths.src.join("c2str.exe");
-        if !c2str.is_file() {
-            println!("Building host tool c2str.exe...");
-            run(CommandSpec::new("gcc")
-                .arg("-DC2STR")
-                .arg("conftest.c")
-                .arg("-o")
-                .arg("c2str.exe")
-                .cwd(&paths.src))?;
-        }
-        let tccdefs = paths.src.join("tccdefs_.h");
-        if !tccdefs.is_file() {
-            println!("Generating tccdefs_.h...");
-            run(CommandSpec::new("./c2str.exe")
-                .arg("include/tccdefs.h")
-                .arg("tccdefs_.h")
-                .cwd(&paths.src))?;
-        }
+        build_tcc_tools(&paths)?;
+
         let full_target = paths.build.join("tcc");
         remove_if_exists(&full_target)?;
         run(CommandSpec::new("make")
             .arg("-f")
             .arg("Makefile")
-            .arg("CC=x86_64-elf-gcc")
+            .arg(format!("CC={}", CC))
             .arg("tcc")
             .cwd(&paths.src))?;
+
         std::fs::rename(paths.src.join("tcc"), &full_target)?;
         let _ = run(CommandSpec::new("readelf").arg("-h").arg(&full_target));
         Ok(())
     }
+}
+
+fn build_tcc_tools(paths: &RecipePaths) -> Result<()> {
+    let c2str = paths.src.join("c2str.exe");
+    if !c2str.is_file() {
+        println!("Building host tool c2str.exe...");
+        run(CommandSpec::new("gcc")
+            .arg("-DC2STR")
+            .arg("conftest.c")
+            .arg("-o")
+            .arg("c2str.exe")
+            .cwd(&paths.src))?;
+    }
+    let tccdefs = paths.src.join("tccdefs_.h");
+    if !tccdefs.is_file() {
+        println!("Generating tccdefs_.h...");
+        run(CommandSpec::new("./c2str.exe")
+            .arg("include/tccdefs.h")
+            .arg("tccdefs_.h")
+            .cwd(&paths.src))?;
+    }
+    Ok(())
 }
 
 impl GitCloneFetch for TinyCc {

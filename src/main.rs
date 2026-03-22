@@ -1,3 +1,4 @@
+mod build;
 mod command;
 mod fetch;
 mod fs_utils;
