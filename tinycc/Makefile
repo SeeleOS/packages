@@ -16,23 +16,10 @@ FETCH_STAMP := $(STAMPDIR)/fetch
 PATCH_STAMP := $(STAMPDIR)/patch
 CONFIGURE_STAMP := $(STAMPDIR)/configure
 
-CC      := x86_64-elf-gcc
 AR      := x86_64-elf-ar
 HOST_CC ?= gcc
 
 RELIBC_INCLUDE := $(RELIBC_ROOT)/target/x86_64-seele/include
-
-CFLAGS_SEELE  := -Wall -O2 \
-                 -ffreestanding -D__seele__ -mno-red-zone \
-                 -fno-stack-protector -fno-builtin -fno-pie -no-pie \
-                 -nostdinc -I$(RELIBC_INCLUDE) \
-                 -I$(WORKSRC) -I$(WORKSRC)/include
-
-LDFLAGS_SEELE := -static -nostdlib \
-                 $(RELIBC_PATH)/crt0.o \
-                 $(RELIBC_PATH)/crti.o \
-                 $(RELIBC_PATH)/libc.a \
-                 $(RELIBC_PATH)/crtn.o
 
 .PHONY: all fetch patch configure relibc build install clean distclean
 
@@ -95,10 +82,7 @@ build: $(CONFIGURE_STAMP) relibc
 	  fi && \
 	  mkdir -p "$(BUILD_DIR)" && \
 	  $(MAKE) -f Makefile \
-	    CC="$(CC)" AR="$(AR)" \
-	    LIBS="" \
-	    CFLAGS="$(CFLAGS_SEELE)" \
-	    LDFLAGS="$(LDFLAGS_SEELE)" \
+	    CC="$(CC)" \
 	    tcc && \
 	  mv tcc "$(FULL_TARGET)"
 	@echo "Build Done. Entry Point:"
