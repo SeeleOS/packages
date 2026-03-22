@@ -1,5 +1,7 @@
 use std::path::PathBuf;
 
+use crate::fs_utils::ensure_dir;
+
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -47,4 +49,16 @@ pub struct PackagePaths {
     pub stamp: PathBuf,
     pub patches: PathBuf,
     pub build: PathBuf,
+}
+
+impl PackagePaths {
+    pub fn ensure(&self) -> Result<()> {
+        ensure_dir(&self.root)?;
+        ensure_dir(&self.src)?;
+        ensure_dir(&self.stamp)?;
+        ensure_dir(&self.patches)?;
+        ensure_dir(&self.build)?;
+
+        Ok(())
+    }
 }
