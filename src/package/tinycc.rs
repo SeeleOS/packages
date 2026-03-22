@@ -1,9 +1,10 @@
 use crate::command::{CommandSpec, run};
 use crate::fetch::GitCloneFetch;
-use crate::fetch_wrap;
 use crate::fs_utils::{copy_file_with_sudo, ensure_dir, remove_if_exists, touch, verify_same_size};
+use crate::install::Install;
 use crate::r#trait::Package;
 use crate::types::{Context, Result};
+use crate::{fetch_wrap, install_wrap};
 
 pub struct TinyCc;
 
@@ -17,6 +18,7 @@ impl Package for TinyCc {
     }
 
     fetch_wrap!(GitCloneFetch);
+    install_wrap!();
 
     fn configure(&self, ctx: &Context) -> Result<()> {
         let paths = self.paths(ctx);
@@ -71,18 +73,6 @@ impl Package for TinyCc {
         let _ = run(CommandSpec::new("readelf").arg("-h").arg(&full_target));
         Ok(())
     }
-
-    fn install(&self, ctx: &Context) -> Result<()> {
-        let paths = self.paths(ctx);
-        self.build(ctx)?;
-        let source = paths.build.join("tcc");
-        let target = ctx.install_dir.join(self.install_name());
-        println!("[packages][tinycc] installing {}...", target.display());
-        copy_file_with_sudo(&source, &target)?;
-        verify_same_size(&source, &target)?;
-        println!("[packages][tinycc][OK]: installation verified.");
-        Ok(())
-    }
 }
 
 impl GitCloneFetch for TinyCc {
@@ -92,5 +82,11 @@ impl GitCloneFetch for TinyCc {
 
     fn git_commit(&self) -> &'static str {
         "fada98b"
+    }
+}
+
+impl Install for TinyCc {
+    fn binary_name(&self) -> &'static str {
+        "tcc"
     }
 }
