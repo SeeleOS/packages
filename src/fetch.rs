@@ -1,9 +1,7 @@
 use std::fs;
 
 use crate::command::{CommandSpec, run};
-use crate::fs_utils::{
-    download_file, ensure_dir, remove_path_if_exists,
-};
+use crate::fs_utils::{download_file, ensure_dir, remove_path_if_exists};
 use crate::r#trait::Package;
 use crate::types::{Context, Result};
 
@@ -31,10 +29,6 @@ pub trait TarballFetch: Package {
         println!("[packages][{}] fetching sources...", self.name());
         ensure_dir(&paths.root)?;
         ensure_dir(&paths.stamp)?;
-        if paths.src.is_dir() {
-            println!("  reusing existing source tree at {}", paths.src.display());
-            return Ok(());
-        }
 
         let tarball = paths.root.join(self.tarball_name());
         if paths.src.exists() {
