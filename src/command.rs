@@ -15,6 +15,9 @@ pub fn run(spec: CommandSpec<'_>) -> Result<()> {
     for (key, val) in spec.envs {
         cmd.env(key, val);
     }
+    for key in spec.env_removes {
+        cmd.env_remove(key);
+    }
     if let Some(path) = spec.stdin_file {
         let file = fs::File::open(path)?;
         cmd.stdin(Stdio::from(file));
@@ -39,6 +42,9 @@ pub fn capture(spec: CommandSpec<'_>) -> Result<String> {
     for (key, val) in spec.envs {
         cmd.env(key, val);
     }
+    for key in spec.env_removes {
+        cmd.env_remove(key);
+    }
     let output = cmd.output()?;
     if !output.status.success() {
         return Err(CommandError {
@@ -55,6 +61,7 @@ pub struct CommandSpec<'a> {
     args: Vec<OsString>,
     cwd: Option<&'a Path>,
     envs: Vec<(&'a str, OsString)>,
+    env_removes: Vec<&'a str>,
     stdin_file: Option<&'a Path>,
 }
 
@@ -65,6 +72,7 @@ impl<'a> CommandSpec<'a> {
             args: Vec::new(),
             cwd: None,
             envs: Vec::new(),
+            env_removes: Vec::new(),
             stdin_file: None,
         }
     }
@@ -81,6 +89,11 @@ impl<'a> CommandSpec<'a> {
 
     pub fn env(mut self, key: &'a str, val: impl Into<OsString>) -> Self {
         self.envs.push((key, val.into()));
+        self
+    }
+
+    pub fn env_remove(mut self, key: &'a str) -> Self {
+        self.env_removes.push(key);
         self
     }
 
