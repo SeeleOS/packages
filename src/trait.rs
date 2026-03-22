@@ -87,6 +87,7 @@ pub trait Package {
     fn run(&self, ctx: &Context, action: Action) -> Result<()> {
         match action {
             Action::Install => self.make(ctx),
+            Action::Clean => self.clean(ctx),
         }
     }
 }
