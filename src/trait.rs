@@ -1,6 +1,7 @@
 use std::fs;
 
 use crate::command::{CommandSpec, run};
+use crate::fetch;
 use crate::fs_utils::{
     download_file, ensure_dir, list_patch_files, remove_if_exists, remove_path_if_exists, touch,
 };
@@ -27,7 +28,6 @@ pub trait Package {
 
     fn patch(&self, ctx: &Context) -> Result<()> {
         let paths = self.paths(ctx);
-        self.fetch(ctx)?;
         ensure_dir(&paths.stamp)?;
         remove_if_exists(&paths.stamp.join("configure"))?;
         let mut patches = list_patch_files(&paths.patches)?;
@@ -73,15 +73,19 @@ pub trait Package {
         Ok(())
     }
 
+    fn make(&self, ctx: &Context) -> Result<()> {
+        self.fetch(ctx)?;
+        self.patch(ctx)?;
+        self.configure(ctx)?;
+        self.build(ctx)?;
+        self.install(ctx)?;
+
+        Ok(())
+    }
+
     fn run(&self, ctx: &Context, action: Action) -> Result<()> {
         match action {
-            Action::Fetch => self.fetch(ctx),
-            Action::Patch => self.patch(ctx),
-            Action::Configure => self.configure(ctx),
-            Action::Build => self.build(ctx),
-            Action::Install => self.install(ctx),
-            Action::Clean => self.clean(ctx),
-            Action::List => Ok(()),
+            Action::Install => self.make(ctx),
         }
     }
 }

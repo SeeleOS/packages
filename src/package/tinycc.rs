@@ -25,7 +25,6 @@ impl Package for TinyCc {
 
     fn configure(&self, ctx: &Context) -> Result<()> {
         let paths = self.paths(ctx);
-        self.patch(ctx)?;
         println!("[packages][tinycc] configuring...");
         ensure_dir(&paths.stamp)?;
         run(CommandSpec::new("./configure")
@@ -37,7 +36,6 @@ impl Package for TinyCc {
 
     fn build(&self, ctx: &Context) -> Result<()> {
         let paths = self.paths(ctx);
-        self.configure(ctx)?;
 
         build_relibc(ctx)?;
         ensure_dir(&paths.build)?;

@@ -18,7 +18,6 @@ pub trait Install: Package {
 
     fn install(&self, ctx: &Context) -> Result<()> {
         let paths = self.paths(ctx);
-        self.build(ctx)?;
         let source = paths.build.join(self.binary_name());
         let target = ctx.install_dir.join(self.install_name());
         println!(

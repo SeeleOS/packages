@@ -5,12 +5,6 @@ pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Action {
     Install,
-    Build,
-    Fetch,
-    Patch,
-    Configure,
-    Clean,
-    List,
 }
 
 #[derive(Clone, Debug)]
@@ -29,7 +23,9 @@ impl Context {
         } else if cwd.join("packages").join("README.md").is_file() {
             cwd.join("packages")
         } else {
-            return Err("could not locate packages directory from current working directory".into());
+            return Err(
+                "could not locate packages directory from current working directory".into(),
+            );
         };
         let base = packages_root
             .parent()

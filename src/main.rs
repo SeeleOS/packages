@@ -19,12 +19,6 @@ use types::{Action, Context, Result};
 fn usage() {
     eprintln!("Usage:");
     eprintln!("  pkgs install <package>");
-    eprintln!("  pkgs build <package>");
-    eprintln!("  pkgs fetch <package>");
-    eprintln!("  pkgs patch <package>");
-    eprintln!("  pkgs configure <package>");
-    eprintln!("  pkgs clean <package>");
-    eprintln!("  pkgs list");
 }
 
 fn package_by_name(name: &str) -> Option<Box<dyn Package>> {
@@ -39,12 +33,6 @@ fn package_by_name(name: &str) -> Option<Box<dyn Package>> {
 fn action_from_name(name: &str) -> Option<Action> {
     match name {
         "install" => Some(Action::Install),
-        "build" => Some(Action::Build),
-        "fetch" => Some(Action::Fetch),
-        "patch" => Some(Action::Patch),
-        "configure" => Some(Action::Configure),
-        "clean" => Some(Action::Clean),
-        "list" => Some(Action::List),
         _ => None,
     }
 }
@@ -60,13 +48,6 @@ fn run() -> Result<()> {
         usage();
         process::exit(1);
     };
-
-    if action == Action::List {
-        for name in ["bash", "busybox", "tinycc"] {
-            println!("{name}");
-        }
-        return Ok(());
-    }
 
     let Some(pkg_name) = args.next() else {
         usage();
