@@ -8,13 +8,21 @@ use crate::misc::with_stamp;
 use crate::types::{Action, Context, PackagePaths, Result};
 
 pub trait MetaPackage: Package {
-    fn packages(&self) -> Vec<impl Package>;
+    fn packages(&self) -> Vec<Box<dyn Package>>;
 }
 
 #[macro_export]
 macro_rules! make_meta_package {
-    ($name: literal, $type: ty) => {
-        impl Package for $type {
+    ($name: literal, $type: ty, $($package: expr),*) => {
+        impl $crate::meta_pkg::MetaPackage for $type {
+            fn packages(&self) -> Vec<Box<dyn $crate::r#trait::Package>> {
+                vec![$(
+                    Box::new($package),
+                )*]
+            }
+        }
+
+        impl $crate::r#trait::Package for $type {
             fn name(&self) -> &'static str {
                 $name
             }
