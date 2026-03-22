@@ -5,6 +5,7 @@ use crate::fetch;
 use crate::fs_utils::{
     download_file, ensure_dir, list_patch_files, remove_if_exists, remove_path_if_exists, touch,
 };
+use crate::misc::with_stamp;
 use crate::types::{Action, Context, PackagePaths, Result};
 pub trait Package {
     fn name(&self) -> &'static str;
@@ -74,11 +75,13 @@ pub trait Package {
     }
 
     fn make(&self, ctx: &Context) -> Result<()> {
-        self.fetch(ctx)?;
-        self.patch(ctx)?;
-        self.configure(ctx)?;
-        self.build(ctx)?;
-        self.install(ctx)?;
+        let paths = self.calc_paths(ctx);
+
+        with_stamp(|| self.fetch(ctx), "fetch", &paths)?;
+        with_stamp(|| self.patch(ctx), "patch", &paths)?;
+        with_stamp(|| self.configure(ctx), "configure", &paths)?;
+        with_stamp(|| self.build(ctx), "build", &paths)?;
+        with_stamp(|| self.install(ctx), "install", &paths)?;
 
         Ok(())
     }
