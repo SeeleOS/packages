@@ -6,4 +6,6 @@ RELIBC_PATH  := $(RELIBC_ROOT)/target/x86_64-seele/release
 SYSROOT      := $(BASE)/sysroot
 INSTALL_DIR  := $(SYSROOT)/programs
 
-CC 	     := clang
+TRIPLE := x86_64-seele
+
+CC 	     := clang --target=$(TRIPLE)
