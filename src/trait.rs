@@ -75,7 +75,8 @@ pub trait Package {
 
         paths.ensure()?;
 
-        with_stamp(|| self.fetch(ctx), "fetch", &paths)?;
+        self.clean(ctx)?;
+        self.fetch(ctx)?;
         self.patch(ctx)?;
         self.configure(ctx)?;
         self.build(ctx)?;
