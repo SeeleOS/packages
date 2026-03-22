@@ -22,17 +22,15 @@ impl Package for TinyCc {
     install_wrap!();
 
     fn configure(&self, ctx: &Context) -> Result<()> {
-        let paths = self.calc_paths(ctx);
         run(CommandSpec::new("./configure")
             .arg("--prefix=/")
-            .cwd(&paths.src))?;
+            .cwd(&self.calc_paths(ctx).src))?;
         Ok(())
     }
 
     fn build(&self, ctx: &Context) -> Result<()> {
         let paths = self.calc_paths(ctx);
 
-        ensure_dir(&paths.build)?;
         build_tcc_tools(&paths)?;
 
         let full_target = paths.build.join("tcc");
@@ -45,7 +43,7 @@ impl Package for TinyCc {
             .cwd(&paths.src))?;
 
         std::fs::rename(paths.src.join("tcc"), &full_target)?;
-        let _ = run(CommandSpec::new("readelf").arg("-h").arg(&full_target));
+
         Ok(())
     }
 }
