@@ -1,14 +1,20 @@
-.PHONY: all bash tcc busybox
+.PHONY: all basic bash tcc tinycc busybox list
 
 basic: tcc bash busybox
 
 all: tcc bash busybox
 
 tcc:
-	$(MAKE) -C tinycc
+	cargo run -- install tinycc
+
+tinycc:
+	cargo run -- install tinycc
 
 bash:
-	$(MAKE) -C bash
+	cargo run -- install bash
 
 busybox:
-	$(MAKE) -C busybox
+	cargo run -- install busybox
+
+list:
+	cargo run -- list

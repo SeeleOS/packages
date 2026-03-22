@@ -1,60 +1,53 @@
 # SeeleOS Packages
 
-This directory contains the package collection for SeeleOS.  
-Each subdirectory describes how to fetch, patch, build and install one piece of software into the Seele sysroot.
+This directory now uses a Rust CLI instead of per-package `Makefile` recipes.
+Package metadata and build logic are modeled as Rust types implementing `trait Package`.
 
-## Installing packages
+## Usage
 
-For example, to install the `tcc` package
+Build and install a package:
 
 ```sh
-# From the project root
+cargo run -- install bash
+cargo run -- install busybox
+cargo run -- install tinycc
+```
+
+If you prefer the old shortcuts, these still work:
+
+```sh
+make -C packages bash
+make -C packages busybox
 make -C packages tcc
-
-# Or if your already in the packages directory
-make tcc
 ```
 
-## Common conventions
-
-Each package directory (`packages/<name>/`) has:
-
-- `Makefile` – package recipe, usually implementing:
-
-  - `fetch`      – get source (tarball or git clone), normally cached under `work/<pkg>/`
-  - `patch`      – apply `patches/*.patch` once per source tree
-  - `configure`  – run upstream configure step if needed and cache it with stamps
-  - `build`      – build with the Seele cross‑toolchain and `relibc-seele`
-  - `install`    – install into `$(INSTALL_DIR)/<name>` and do a basic size check
-  - `clean`      – remove that package’s `work/<name>` directory
-
-All temporary output (unpacked sources, build artifacts, etc.) lives under:
-
-- `work/<pkg>/...`
-
-Most package recipes should keep fetch/patch/configure incremental by storing stamp files under
-`work/<pkg>/.stamp/`, so rebuilding after a `relibc` change does not redownload or unpack sources.
-
-You can delete `work/` at any time; the next build will recreate it.
-
-## Adding a new package (short version)
-
-1. Create `packages/<name>/` and (optionally) `packages/<name>/patches/`.
-2. Write `packages/<name>/Makefile`:
-
-   - `include ../config.mk`
-   - set `PKG_NAME`, and source location (tarball or git)
-   - implement `fetch/patch/configure/build/install`
-
-3. Optionally add a convenience target to `packages/Makefile`, e.g.:
-
-   ```make
-   <name>:
-   	$(MAKE) -C <name>
-   ```
-
-Then you can build it with:
+List supported packages:
 
 ```sh
-make -C packages <name>
+cargo run -- list
 ```
+
+## Commands
+
+The `pkgs` binary supports:
+
+- `pkgs fetch <name>`
+- `pkgs patch <name>`
+- `pkgs configure <name>`
+- `pkgs build <name>`
+- `pkgs install <name>`
+- `pkgs clean <name>`
+- `pkgs list`
+
+## Layout
+
+- `src/` contains the Rust package manager implementation.
+- `bash/`, `busybox/`, `tinycc/` keep package-specific assets such as patches and config files.
+- `work/<pkg>/` stores downloaded sources, stamps, build output, and other temporary artifacts.
+
+## Adding a package
+
+1. Add a new package asset directory under `packages/<name>/` if patches or extra files are needed.
+2. Add a new Rust type under `src/package/`.
+3. Implement `Package` for that type.
+4. Register the package in `src/main.rs`.
