@@ -1,5 +1,6 @@
 use std::fs;
 
+use crate::build::build_relibc;
 use crate::command::{CommandSpec, run};
 use crate::fs_utils::{ensure_dir, list_patch_files, touch};
 use crate::misc::with_stamp;
@@ -71,6 +72,8 @@ pub trait Package {
     }
 
     fn make(&self, ctx: &Context) -> Result<()> {
+        build_relibc(ctx)?;
+
         let paths = self.calc_paths(ctx);
 
         self.clean(ctx)?;
