@@ -1,9 +1,7 @@
-use std::fmt::format;
-
 use crate::build::{CC, build_relibc};
 use crate::command::{CommandSpec, run};
 use crate::fetch::GitCloneFetch;
-use crate::fs_utils::{copy_file_with_sudo, ensure_dir, remove_if_exists, touch, verify_same_size};
+use crate::fs_utils::{ensure_dir, remove_if_exists};
 use crate::install::Install;
 use crate::r#trait::Package;
 use crate::types::{Context, PackagePaths, Result};
@@ -25,19 +23,15 @@ impl Package for TinyCc {
 
     fn configure(&self, ctx: &Context) -> Result<()> {
         let paths = self.calc_paths(ctx);
-        println!("[packages][tinycc] configuring...");
-        ensure_dir(&paths.stamp)?;
         run(CommandSpec::new("./configure")
             .arg("--prefix=/")
             .cwd(&paths.src))?;
-        touch(&paths.stamp.join("configure"))?;
         Ok(())
     }
 
     fn build(&self, ctx: &Context) -> Result<()> {
         let paths = self.calc_paths(ctx);
 
-        build_relibc(ctx)?;
         ensure_dir(&paths.build)?;
 
         build_tcc_tools(&paths)?;

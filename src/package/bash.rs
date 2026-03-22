@@ -1,7 +1,7 @@
 use crate::command::{CommandSpec, capture, run};
 use crate::fetch::TarballFetch;
 use crate::fetch_wrap;
-use crate::fs_utils::{copy_file_with_sudo, ensure_dir, remove_if_exists, touch, verify_same_size};
+use crate::fs_utils::{copy_file_with_sudo, ensure_dir, remove_if_exists, verify_same_size};
 use crate::r#trait::Package;
 use crate::types::{Context, Result};
 
@@ -19,7 +19,6 @@ impl Package for Bash {
         self.patch(ctx)?;
         println!("[packages][bash] configuring...");
         ensure_dir(&paths.build)?;
-        ensure_dir(&paths.stamp)?;
 
         let relibc_include = ctx.relibc_root.join("target/x86_64-seele/include");
         let cflags = format!(
@@ -55,7 +54,6 @@ impl Package for Bash {
             .arg("--prefix=/")
             .arg("--disable-nls")
             .arg("--without-bash-malloc"))?;
-        touch(&paths.stamp.join("configure"))?;
         Ok(())
     }
 

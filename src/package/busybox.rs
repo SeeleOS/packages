@@ -3,7 +3,7 @@ use std::fs;
 use crate::command::{CommandSpec, capture, run};
 use crate::fetch::TarballFetch;
 use crate::fetch_wrap;
-use crate::fs_utils::{ensure_dir, remove_if_exists, touch};
+use crate::fs_utils::{ensure_dir, remove_if_exists};
 use crate::r#trait::Package;
 use crate::types::{Context, Result};
 
@@ -21,7 +21,6 @@ impl Package for Busybox {
         self.patch(ctx)?;
         println!("[packages][busybox] configuring...");
         ensure_dir(&paths.build)?;
-        ensure_dir(&paths.stamp)?;
 
         let config_in = ctx.packages_root.join("busybox/seele.config");
         let build_config = paths.build.join(".config");
@@ -66,7 +65,6 @@ impl Package for Busybox {
             paths.src.display(),
             paths.build.display()
         )))?;
-        touch(&paths.stamp.join("configure"))?;
         Ok(())
     }
 

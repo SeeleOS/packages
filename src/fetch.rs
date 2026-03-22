@@ -2,10 +2,10 @@ use std::fs;
 
 use crate::command::{CommandSpec, run};
 use crate::fs_utils::{
-    download_file, ensure_dir, list_patch_files, remove_if_exists, remove_path_if_exists, touch,
+    download_file, ensure_dir, remove_path_if_exists,
 };
 use crate::r#trait::Package;
-use crate::types::{Action, Context, PackagePaths, Result};
+use crate::types::{Context, Result};
 
 #[macro_export]
 macro_rules! fetch_wrap {
@@ -33,7 +33,6 @@ pub trait TarballFetch: Package {
         ensure_dir(&paths.stamp)?;
         if paths.src.is_dir() {
             println!("  reusing existing source tree at {}", paths.src.display());
-            touch(&paths.stamp.join("fetch"))?;
             return Ok(());
         }
 
@@ -51,7 +50,6 @@ pub trait TarballFetch: Package {
             .arg("--strip-components=1")
             .arg("-C")
             .arg(&paths.src))?;
-        touch(&paths.stamp.join("fetch"))?;
         Ok(())
     }
 }
@@ -67,7 +65,6 @@ pub trait GitCloneFetch: Package {
         ensure_dir(&paths.stamp)?;
         if paths.src.join(".git").is_dir() {
             println!("  reusing existing clone at {}", paths.src.display());
-            touch(&paths.stamp.join("fetch"))?;
             return Ok(());
         }
         if paths.src.exists() {
@@ -82,7 +79,6 @@ pub trait GitCloneFetch: Package {
             .arg("checkout")
             .arg(self.git_commit())
             .cwd(&paths.src))?;
-        touch(&paths.stamp.join("fetch"))?;
         Ok(())
     }
 }

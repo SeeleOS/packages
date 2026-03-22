@@ -1,9 +1,8 @@
 use std::fs;
 
 use crate::command::{CommandSpec, run};
-use crate::fetch;
 use crate::fs_utils::{
-    download_file, ensure_dir, list_patch_files, remove_if_exists, remove_path_if_exists, touch,
+    ensure_dir, list_patch_files, touch,
 };
 use crate::misc::with_stamp;
 use crate::types::{Action, Context, PackagePaths, Result};
@@ -30,7 +29,6 @@ pub trait Package {
     fn patch(&self, ctx: &Context) -> Result<()> {
         let paths = self.calc_paths(ctx);
         ensure_dir(&paths.stamp)?;
-        remove_if_exists(&paths.stamp.join("configure"))?;
         let mut patches = list_patch_files(&paths.patches)?;
         if patches.is_empty() {
             println!("[packages][{}] no patches", self.name());
@@ -78,10 +76,10 @@ pub trait Package {
         let paths = self.calc_paths(ctx);
 
         with_stamp(|| self.fetch(ctx), "fetch", &paths)?;
-        with_stamp(|| self.patch(ctx), "patch", &paths)?;
-        with_stamp(|| self.configure(ctx), "configure", &paths)?;
-        with_stamp(|| self.build(ctx), "build", &paths)?;
-        with_stamp(|| self.install(ctx), "install", &paths)?;
+        self.patch(ctx)?;
+        self.configure(ctx)?;
+        self.build(ctx)?;
+        self.install(ctx)?;
 
         Ok(())
     }

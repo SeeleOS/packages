@@ -1,5 +1,4 @@
 use crate::{
-    command::{CommandSpec, run},
     fs_utils::{ensure_dir, touch},
     types::{PackagePaths, Result},
 };
