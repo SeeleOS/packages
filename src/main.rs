@@ -17,6 +17,8 @@ use package::tinycc::TinyCc;
 use r#trait::Package;
 use types::{Action, Context, Result};
 
+use crate::package::base::BasePackage;
+
 fn usage() {
     eprintln!("Usage:");
     eprintln!("  pkgs install <package>");
@@ -27,6 +29,7 @@ fn package_by_name(name: &str) -> Option<Box<dyn Package>> {
         "bash" => Some(Box::new(Bash)),
         "busybox" => Some(Box::new(Busybox)),
         "tcc" | "tinycc" => Some(Box::new(TinyCc)),
+        "base" => Some(Box::new(BasePackage)),
         _ => None,
     }
 }
