@@ -73,13 +73,16 @@ pub trait Package {
     fn make(&self, ctx: &Context) -> Result<()> {
         let paths = self.calc_paths(ctx);
 
-        paths.ensure()?;
-
         self.clean(ctx)?;
+        paths.ensure()?;
         self.fetch(ctx)?;
+        paths.ensure()?;
         self.patch(ctx)?;
+        paths.ensure()?;
         self.configure(ctx)?;
+        paths.ensure()?;
         self.build(ctx)?;
+        paths.ensure()?;
         self.install(ctx)?;
 
         Ok(())

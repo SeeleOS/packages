@@ -21,8 +21,6 @@ impl Package for Busybox {
 
     fn configure(&self, ctx: &Context) -> Result<()> {
         let paths = self.calc_paths(ctx);
-        println!("[packages][busybox] configuring...");
-        ensure_dir(&paths.build)?;
 
         load_config(ctx, &paths)?;
 
@@ -44,9 +42,7 @@ impl Package for Busybox {
             .arg("HOSTCC=gcc")
             .arg(format!("CC={}", CC))
             .arg("busybox"))?;
-        let _ = run(CommandSpec::new("readelf")
-            .arg("-h")
-            .arg(paths.build.join("busybox")));
+
         Ok(())
     }
 
@@ -56,7 +52,10 @@ impl Package for Busybox {
         let busybox_bin = ctx.install_dir.join("busybox");
         let applets = busybox_applets(&paths)?;
 
-        println!("[packages][busybox] installing {}...", busybox_bin.display());
+        println!(
+            "[packages][busybox] installing {}...",
+            busybox_bin.display()
+        );
         copy_file_with_sudo(&source, &busybox_bin)?;
         verify_same_size(&source, &busybox_bin)?;
         for applet in &applets {
