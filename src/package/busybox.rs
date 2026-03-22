@@ -1,6 +1,6 @@
 use std::collections::BTreeSet;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use crate::build::CC;
 use crate::command::{CommandSpec, capture, run};
@@ -53,25 +53,19 @@ impl Package for Busybox {
     fn install(&self, ctx: &Context) -> Result<()> {
         let paths = self.calc_paths(ctx);
         let source = paths.build.join("busybox");
-        let busybox_bin = ctx.install_dir.join("bin/busybox");
+        let busybox_bin = ctx.install_dir.join("busybox");
+        let applets = busybox_applets(&paths)?;
 
         println!("[packages][busybox] installing {}...", busybox_bin.display());
         copy_file_with_sudo(&source, &busybox_bin)?;
         verify_same_size(&source, &busybox_bin)?;
-
-        let old_links = collect_busybox_symlinks(&ctx.install_dir, &busybox_bin)?;
-        for link in old_links {
-            run(CommandSpec::new("sudo").arg("rm").arg("-f").arg(&link))?;
-        }
-
-        let applets = busybox_applets(&paths)?;
         for applet in &applets {
             install_busybox_symlink(&ctx.install_dir, applet)?;
         }
         run(CommandSpec::new("sync"))?;
 
-        let busybox_bin = ctx.install_dir.join("bin/busybox");
-        let ls_link = ctx.install_dir.join("bin/ls");
+        let busybox_bin = ctx.install_dir.join("busybox");
+        let ls_link = ctx.install_dir.join("ls");
         if !busybox_bin.is_file() {
             return Err(format!("{} was not installed", busybox_bin.display()).into());
         }
@@ -146,8 +140,6 @@ fn remove_config_key(config: &mut String, key: &str) {
 fn busybox_applets(paths: &PackagePaths) -> Result<Vec<PathBuf>> {
     let autoconf = paths.build.join("include/autoconf.h");
     let applets = paths.build.join("include/applets.h");
-    let install_no_usr =
-        fs::read_to_string(&autoconf)?.contains("#define ENABLE_INSTALL_NO_USR 1");
     let output = capture(
         CommandSpec::new("gcc")
             .arg("-E")
@@ -172,107 +164,27 @@ fn busybox_applets(paths: &PackagePaths) -> Result<Vec<PathBuf>> {
         if name == "busybox" {
             continue;
         }
-        entries.insert(applet_path(dir, name, install_no_usr)?);
+        entries.insert(applet_path(dir, name)?);
     }
 
     Ok(entries.into_iter().collect())
 }
 
-fn applet_path(dir: &str, name: &str, install_no_usr: bool) -> Result<PathBuf> {
-    let mut path = match dir {
-        "BB_DIR_BIN" => PathBuf::from("bin"),
-        "BB_DIR_SBIN" => PathBuf::from("sbin"),
-        "BB_DIR_USR_BIN" => {
-            if install_no_usr {
-                PathBuf::from("bin")
-            } else {
-                PathBuf::from("usr/bin")
-            }
+fn applet_path(dir: &str, name: &str) -> Result<PathBuf> {
+    match dir {
+        "BB_DIR_BIN" | "BB_DIR_SBIN" | "BB_DIR_USR_BIN" | "BB_DIR_USR_SBIN" | "BB_DIR_ROOT" => {
+            Ok(PathBuf::from(name))
         }
-        "BB_DIR_USR_SBIN" => {
-            if install_no_usr {
-                PathBuf::from("sbin")
-            } else {
-                PathBuf::from("usr/sbin")
-            }
-        }
-        "BB_DIR_ROOT" => PathBuf::new(),
         other => return Err(format!("unknown busybox applet dir: {other}").into()),
-    };
-    path.push(name);
-    Ok(path)
+    }
 }
 
-fn install_busybox_symlink(install_dir: &Path, link_rel: &Path) -> Result<()> {
+fn install_busybox_symlink(install_dir: &PathBuf, link_rel: &PathBuf) -> Result<()> {
     let link = install_dir.join(link_rel);
-    let parent = link.parent().ok_or("busybox applet install target has no parent")?;
-    let parent_rel = parent.strip_prefix(install_dir)?;
-    let target = relative_path(parent_rel, Path::new("bin/busybox"));
-
-    run(CommandSpec::new("sudo").arg("mkdir").arg("-p").arg(parent))?;
     run(CommandSpec::new("sudo")
         .arg("ln")
         .arg("-sfn")
-        .arg(&target)
+        .arg("busybox")
         .arg(&link))?;
     Ok(())
-}
-
-fn collect_busybox_symlinks(root: &Path, busybox_bin: &Path) -> Result<Vec<PathBuf>> {
-    let busybox_bin = fs::canonicalize(busybox_bin)?;
-    let mut links = Vec::new();
-    collect_busybox_symlinks_inner(root, &busybox_bin, &mut links)?;
-    links.sort();
-    Ok(links)
-}
-
-fn collect_busybox_symlinks_inner(
-    dir: &Path,
-    busybox_bin: &Path,
-    links: &mut Vec<PathBuf>,
-) -> Result<()> {
-    for entry in fs::read_dir(dir)? {
-        let entry = entry?;
-        let path = entry.path();
-        let file_type = entry.file_type()?;
-        if file_type.is_dir() {
-            collect_busybox_symlinks_inner(&path, busybox_bin, links)?;
-            continue;
-        }
-        if !file_type.is_symlink() {
-            continue;
-        }
-
-        let target = fs::read_link(&path)?;
-        let resolved = if target.is_absolute() {
-            target
-        } else {
-            path.parent()
-                .ok_or("busybox symlink has no parent")?
-                .join(target)
-        };
-        if fs::canonicalize(&resolved).ok().as_deref() == Some(busybox_bin) {
-            links.push(path);
-        }
-    }
-    Ok(())
-}
-
-fn relative_path(from: &Path, to: &Path) -> PathBuf {
-    let from_parts = from.iter().collect::<Vec<_>>();
-    let to_parts = to.iter().collect::<Vec<_>>();
-    let common_len = from_parts
-        .iter()
-        .zip(&to_parts)
-        .take_while(|(a, b)| a == b)
-        .count();
-
-    let mut path = PathBuf::new();
-    for _ in common_len..from_parts.len() {
-        path.push("..");
-    }
-    for part in &to_parts[common_len..] {
-        path.push(part);
-    }
-    path
 }
