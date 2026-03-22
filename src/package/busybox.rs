@@ -17,7 +17,7 @@ impl Package for Busybox {
     fetch_wrap!(TarballFetch);
 
     fn configure(&self, ctx: &Context) -> Result<()> {
-        let paths = self.paths(ctx);
+        let paths = self.calc_paths(ctx);
         self.patch(ctx)?;
         println!("[packages][busybox] configuring...");
         ensure_dir(&paths.build)?;
@@ -71,7 +71,7 @@ impl Package for Busybox {
     }
 
     fn build(&self, ctx: &Context) -> Result<()> {
-        let paths = self.paths(ctx);
+        let paths = self.calc_paths(ctx);
         self.configure(ctx)?;
         println!("[packages][busybox] checking relibc artifacts...");
         for dep in ["crt0.o", "crti.o", "crtn.o", "libc.a"] {
@@ -97,7 +97,7 @@ impl Package for Busybox {
     }
 
     fn install(&self, ctx: &Context) -> Result<()> {
-        let paths = self.paths(ctx);
+        let paths = self.calc_paths(ctx);
         self.build(ctx)?;
         println!(
             "[packages][busybox] installing busybox symlinks into {}...",

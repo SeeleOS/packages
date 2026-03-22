@@ -27,7 +27,7 @@ pub trait TarballFetch: Package {
     }
 
     fn fetch(&self, ctx: &Context) -> Result<()> {
-        let paths = self.paths(ctx);
+        let paths = self.calc_paths(ctx);
         println!("[packages][{}] fetching sources...", self.name());
         ensure_dir(&paths.root)?;
         ensure_dir(&paths.stamp)?;
@@ -61,7 +61,7 @@ pub trait GitCloneFetch: Package {
     fn git_commit(&self) -> &'static str;
 
     fn fetch(&self, ctx: &Context) -> Result<()> {
-        let paths = self.paths(ctx);
+        let paths = self.calc_paths(ctx);
         println!("[packages][{}] fetching sources...", self.name());
         ensure_dir(&paths.root)?;
         ensure_dir(&paths.stamp)?;

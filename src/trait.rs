@@ -13,7 +13,7 @@ pub trait Package {
         self.name()
     }
 
-    fn paths(&self, ctx: &Context) -> RecipePaths {
+    fn calc_paths(&self, ctx: &Context) -> RecipePaths {
         let root = ctx.packages_root.join("work").join(self.name());
         RecipePaths {
             src: root.join("src"),
@@ -27,7 +27,7 @@ pub trait Package {
     fn fetch(&self, _ctx: &Context) -> Result<()>;
 
     fn patch(&self, ctx: &Context) -> Result<()> {
-        let paths = self.paths(ctx);
+        let paths = self.calc_paths(ctx);
         ensure_dir(&paths.stamp)?;
         remove_if_exists(&paths.stamp.join("configure"))?;
         let mut patches = list_patch_files(&paths.patches)?;
@@ -61,7 +61,7 @@ pub trait Package {
     fn install(&self, _ctx: &Context) -> Result<()>;
 
     fn clean(&self, ctx: &Context) -> Result<()> {
-        let paths = self.paths(ctx);
+        let paths = self.calc_paths(ctx);
         println!(
             "[packages][{}] cleaning {}...",
             self.name(),

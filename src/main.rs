@@ -3,6 +3,7 @@ mod command;
 mod fetch;
 mod fs_utils;
 mod install;
+mod misc;
 mod package;
 mod r#trait;
 mod types;
