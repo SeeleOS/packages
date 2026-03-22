@@ -22,7 +22,8 @@ use crate::package::base::BasePackage;
 
 fn usage() {
     eprintln!("Usage:");
-    eprintln!("  pkgs install <package>");
+    eprintln!("  cargo run install <package>");
+    eprintln!("  cargo run clean <package>");
 }
 
 fn package_by_name(name: &str) -> Option<Box<dyn Package>> {
