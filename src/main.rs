@@ -31,13 +31,6 @@ fn package_by_name(name: &str) -> Option<Box<dyn Package>> {
     }
 }
 
-fn action_from_name(name: &str) -> Option<Action> {
-    match name {
-        "install" => Some(Action::Install),
-        _ => None,
-    }
-}
-
 fn run() -> Result<()> {
     let mut args = env::args().skip(1);
     let Some(action_name) = args.next() else {
@@ -45,7 +38,7 @@ fn run() -> Result<()> {
         process::exit(1);
     };
 
-    let Some(action) = action_from_name(&action_name) else {
+    let Some(action) = Action::from_str(&action_name) else {
         usage();
         process::exit(1);
     };

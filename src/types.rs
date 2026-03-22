@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{from, path::PathBuf};
 
 use crate::fs_utils::ensure_dir;
 
@@ -7,6 +7,17 @@ pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Action {
     Install,
+    Clean,
+}
+
+impl Action {
+    pub fn from_str(value: &str) -> Option<Self> {
+        match value {
+            "install" => Some(Action::Install),
+            "clean" => Some(Action::Clean),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
