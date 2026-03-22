@@ -1,6 +1,7 @@
 use std::fs;
 
 use crate::command::{CommandSpec, capture, run};
+use crate::fetch_wrap;
 use crate::fs_utils::{ensure_dir, remove_if_exists, touch};
 use crate::traits::{Package, TarballFetch};
 use crate::types::{Context, Result};
@@ -12,9 +13,7 @@ impl Package for Busybox {
         "busybox"
     }
 
-    fn fetch(&self, ctx: &Context) -> Result<()> {
-        <Self as TarballFetch>::fetch(self, ctx)
-    }
+    fetch_wrap!(TarballFetch);
 
     fn configure(&self, ctx: &Context) -> Result<()> {
         let paths = self.paths(ctx);
@@ -26,14 +25,12 @@ impl Package for Busybox {
         let config_in = ctx.packages_root.join("busybox/seele.config");
         let build_config = paths.build.join(".config");
         remove_if_exists(&build_config)?;
-        run(
-            CommandSpec::new("make")
-                .arg("-C")
-                .arg(&paths.src)
-                .arg(format!("O={}", paths.build.display()))
-                .arg("HOSTCC=gcc")
-                .arg("allnoconfig"),
-        )?;
+        run(CommandSpec::new("make")
+            .arg("-C")
+            .arg(&paths.src)
+            .arg(format!("O={}", paths.build.display()))
+            .arg("HOSTCC=gcc")
+            .arg("allnoconfig"))?;
 
         let mut config = fs::read_to_string(&build_config)?;
         for line in fs::read_to_string(config_in)?.lines() {
@@ -63,15 +60,11 @@ impl Package for Busybox {
         config.push_str("CONFIG_EXTRA_LDLIBS=\"-l:libc.a -l:crtn.o\"\n");
         fs::write(&build_config, config)?;
 
-        run(
-            CommandSpec::new("sh")
-                .arg("-c")
-                .arg(format!(
-                    "yes \"\" | make -C '{}' O='{}' HOSTCC='gcc' oldconfig >/dev/null",
-                    paths.src.display(),
-                    paths.build.display()
-                )),
-        )?;
+        run(CommandSpec::new("sh").arg("-c").arg(format!(
+            "yes \"\" | make -C '{}' O='{}' HOSTCC='gcc' oldconfig >/dev/null",
+            paths.src.display(),
+            paths.build.display()
+        )))?;
         touch(&paths.stamp.join("configure"))?;
         Ok(())
     }
@@ -86,19 +79,19 @@ impl Package for Busybox {
             }
         }
         println!("[packages][busybox] building busybox...");
-        run(
-            CommandSpec::new("make")
-                .arg("-C")
-                .arg(&paths.src)
-                .arg(format!("O={}", paths.build.display()))
-                .arg("HOSTCC=gcc")
-                .arg("CC=x86_64-elf-gcc")
-                .arg("AR=x86_64-elf-ar")
-                .arg("CROSS_COMPILE=x86_64-elf-")
-                .arg("CFLAGS_busybox=-l:crt0.o -l:crti.o")
-                .arg("busybox"),
-        )?;
-        let _ = run(CommandSpec::new("readelf").arg("-h").arg(paths.build.join("busybox")));
+        run(CommandSpec::new("make")
+            .arg("-C")
+            .arg(&paths.src)
+            .arg(format!("O={}", paths.build.display()))
+            .arg("HOSTCC=gcc")
+            .arg("CC=x86_64-elf-gcc")
+            .arg("AR=x86_64-elf-ar")
+            .arg("CROSS_COMPILE=x86_64-elf-")
+            .arg("CFLAGS_busybox=-l:crt0.o -l:crti.o")
+            .arg("busybox"))?;
+        let _ = run(CommandSpec::new("readelf")
+            .arg("-h")
+            .arg(paths.build.join("busybox")));
         Ok(())
     }
 
@@ -122,23 +115,19 @@ impl Package for Busybox {
                     paths.src.display()
                 )),
         )?;
-        let cleanup = run(
-            CommandSpec::new("sudo")
-                .arg(paths.src.join("applets/install.sh"))
-                .arg(&ctx.install_dir)
-                .arg("--cleanup")
-                .cwd(&paths.build),
-        );
+        let cleanup = run(CommandSpec::new("sudo")
+            .arg(paths.src.join("applets/install.sh"))
+            .arg(&ctx.install_dir)
+            .arg("--cleanup")
+            .cwd(&paths.build));
         if cleanup.is_err() {
             println!("[packages][busybox] cleanup reported an error and was ignored");
         }
-        run(
-            CommandSpec::new("sudo")
-                .arg(paths.src.join("applets/install.sh"))
-                .arg(&ctx.install_dir)
-                .arg("--symlinks")
-                .cwd(&paths.build),
-        )?;
+        run(CommandSpec::new("sudo")
+            .arg(paths.src.join("applets/install.sh"))
+            .arg(&ctx.install_dir)
+            .arg("--symlinks")
+            .cwd(&paths.build))?;
         run(CommandSpec::new("sync"))?;
         let busybox_bin = ctx.install_dir.join("bin/busybox");
         let ls_link = ctx.install_dir.join("bin/ls");
