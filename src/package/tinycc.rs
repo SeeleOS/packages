@@ -32,6 +32,7 @@ impl Package for TinyCc {
     fn build(&self, ctx: &Context) -> Result<()> {
         let paths = self.calc_paths(ctx);
 
+        ensure_dir(&paths.build)?;
         build_tcc_tools(&paths)?;
 
         let full_target = paths.build.join("tcc");

@@ -16,7 +16,6 @@ impl Package for Bash {
 
     fn configure(&self, ctx: &Context) -> Result<()> {
         let paths = self.calc_paths(ctx);
-        self.patch(ctx)?;
         println!("[packages][bash] configuring...");
         ensure_dir(&paths.build)?;
 
@@ -59,7 +58,6 @@ impl Package for Bash {
 
     fn build(&self, ctx: &Context) -> Result<()> {
         let paths = self.calc_paths(ctx);
-        self.configure(ctx)?;
         println!("[packages][bash] building relibc...");
         run(CommandSpec::new("make")
             .arg("-C")
@@ -92,7 +90,6 @@ impl Package for Bash {
 
     fn install(&self, ctx: &Context) -> Result<()> {
         let paths = self.calc_paths(ctx);
-        self.build(ctx)?;
         let source = paths.build.join("bash");
         let target = ctx.install_dir.join("bash");
         println!("[packages][bash] installing {}...", target.display());
