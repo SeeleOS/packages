@@ -41,7 +41,7 @@ impl Context {
 }
 
 #[derive(Clone, Debug)]
-pub struct RecipePaths {
+pub struct PackagePaths {
     pub root: PathBuf,
     pub src: PathBuf,
     pub stamp: PathBuf,

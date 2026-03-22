@@ -6,7 +6,7 @@ use crate::fetch::GitCloneFetch;
 use crate::fs_utils::{copy_file_with_sudo, ensure_dir, remove_if_exists, touch, verify_same_size};
 use crate::install::Install;
 use crate::r#trait::Package;
-use crate::types::{Context, RecipePaths, Result};
+use crate::types::{Context, PackagePaths, Result};
 use crate::{fetch_wrap, install_wrap};
 
 pub struct TinyCc;
@@ -57,7 +57,7 @@ impl Package for TinyCc {
     }
 }
 
-fn build_tcc_tools(paths: &RecipePaths) -> Result<()> {
+fn build_tcc_tools(paths: &PackagePaths) -> Result<()> {
     let c2str = paths.src.join("c2str.exe");
     if !c2str.is_file() {
         println!("Building host tool c2str.exe...");

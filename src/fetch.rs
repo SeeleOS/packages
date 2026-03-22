@@ -5,7 +5,7 @@ use crate::fs_utils::{
     download_file, ensure_dir, list_patch_files, remove_if_exists, remove_path_if_exists, touch,
 };
 use crate::r#trait::Package;
-use crate::types::{Action, Context, RecipePaths, Result};
+use crate::types::{Action, Context, PackagePaths, Result};
 
 #[macro_export]
 macro_rules! fetch_wrap {

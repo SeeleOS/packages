@@ -5,7 +5,7 @@ use crate::fetch;
 use crate::fs_utils::{
     download_file, ensure_dir, list_patch_files, remove_if_exists, remove_path_if_exists, touch,
 };
-use crate::types::{Action, Context, RecipePaths, Result};
+use crate::types::{Action, Context, PackagePaths, Result};
 pub trait Package {
     fn name(&self) -> &'static str;
 
@@ -13,9 +13,9 @@ pub trait Package {
         self.name()
     }
 
-    fn calc_paths(&self, ctx: &Context) -> RecipePaths {
+    fn calc_paths(&self, ctx: &Context) -> PackagePaths {
         let root = ctx.packages_root.join("work").join(self.name());
-        RecipePaths {
+        PackagePaths {
             src: root.join("src"),
             stamp: root.join(".stamp"),
             patches: ctx.packages_root.join(self.name()).join("patches"),
