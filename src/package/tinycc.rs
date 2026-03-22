@@ -1,7 +1,8 @@
 use crate::command::{CommandSpec, run};
+use crate::fetch::GitCloneFetch;
 use crate::fetch_wrap;
 use crate::fs_utils::{copy_file_with_sudo, ensure_dir, remove_if_exists, touch, verify_same_size};
-use crate::traits::{GitCloneFetch, Package};
+use crate::r#trait::Package;
 use crate::types::{Context, Result};
 
 pub struct TinyCc;

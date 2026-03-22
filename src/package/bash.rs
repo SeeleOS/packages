@@ -1,7 +1,8 @@
 use crate::command::{CommandSpec, capture, run};
+use crate::fetch::TarballFetch;
 use crate::fetch_wrap;
 use crate::fs_utils::{copy_file_with_sudo, ensure_dir, remove_if_exists, touch, verify_same_size};
-use crate::traits::{Package, TarballFetch};
+use crate::r#trait::Package;
 use crate::types::{Context, Result};
 
 pub struct Bash;

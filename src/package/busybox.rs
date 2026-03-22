@@ -1,9 +1,10 @@
 use std::fs;
 
 use crate::command::{CommandSpec, capture, run};
+use crate::fetch::TarballFetch;
 use crate::fetch_wrap;
 use crate::fs_utils::{ensure_dir, remove_if_exists, touch};
-use crate::traits::{Package, TarballFetch};
+use crate::r#trait::Package;
 use crate::types::{Context, Result};
 
 pub struct Busybox;

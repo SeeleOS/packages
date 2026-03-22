@@ -1,7 +1,8 @@
 mod command;
+mod fetch;
 mod fs_utils;
 mod package;
-mod traits;
+mod r#trait;
 mod types;
 
 use std::env;
@@ -10,7 +11,7 @@ use std::process;
 use package::bash::Bash;
 use package::busybox::Busybox;
 use package::tinycc::TinyCc;
-use traits::Package;
+use r#trait::Package;
 use types::{Action, Context, Result};
 
 fn usage() {
