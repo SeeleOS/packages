@@ -1,4 +1,5 @@
 use crate::command::{CommandSpec, capture, run};
+use crate::fetch_wrap;
 use crate::fs_utils::{copy_file_with_sudo, ensure_dir, remove_if_exists, touch, verify_same_size};
 use crate::traits::{Package, TarballFetch};
 use crate::types::{Context, Result};
@@ -10,9 +11,7 @@ impl Package for Bash {
         "bash"
     }
 
-    fn fetch(&self, ctx: &Context) -> Result<()> {
-        <Self as TarballFetch>::fetch(self, ctx)
-    }
+    fetch_wrap!(TarballFetch);
 
     fn configure(&self, ctx: &Context) -> Result<()> {
         let paths = self.paths(ctx);
@@ -43,20 +42,18 @@ impl Package for Bash {
         )
         .unwrap_or_else(|_| "x86_64-pc-linux-gnu".to_string());
 
-        run(
-            CommandSpec::new("../configure")
-                .cwd(&paths.build)
-                .env("CC", "x86_64-elf-gcc")
-                .env("AR", "x86_64-elf-ar")
-                .env("CFLAGS", cflags)
-                .env("LDFLAGS", ldflags)
-                .env("LIBS", libs)
-                .arg("--host=x86_64-unknown-none")
-                .arg(format!("--build={}", build_triple.trim()))
-                .arg("--prefix=/")
-                .arg("--disable-nls")
-                .arg("--without-bash-malloc"),
-        )?;
+        run(CommandSpec::new("../configure")
+            .cwd(&paths.build)
+            .env("CC", "x86_64-elf-gcc")
+            .env("AR", "x86_64-elf-ar")
+            .env("CFLAGS", cflags)
+            .env("LDFLAGS", ldflags)
+            .env("LIBS", libs)
+            .arg("--host=x86_64-unknown-none")
+            .arg(format!("--build={}", build_triple.trim()))
+            .arg("--prefix=/")
+            .arg("--disable-nls")
+            .arg("--without-bash-malloc"))?;
         touch(&paths.stamp.join("configure"))?;
         Ok(())
     }
@@ -65,7 +62,10 @@ impl Package for Bash {
         let paths = self.paths(ctx);
         self.configure(ctx)?;
         println!("[packages][bash] building relibc...");
-        run(CommandSpec::new("make").arg("-C").arg(&ctx.relibc_root).arg("all"))?;
+        run(CommandSpec::new("make")
+            .arg("-C")
+            .arg(&ctx.relibc_root)
+            .arg("all"))?;
         println!("[packages][bash] building bash...");
         let full_target = paths.build.join("bash");
         for dep in [
@@ -83,12 +83,10 @@ impl Package for Bash {
                 break;
             }
         }
-        run(
-            CommandSpec::new("make")
-                .cwd(&paths.build)
-                .env("ADDON_LDFLAGS", "-Wl,--allow-multiple-definition")
-                .arg("bash"),
-        )?;
+        run(CommandSpec::new("make")
+            .cwd(&paths.build)
+            .env("ADDON_LDFLAGS", "-Wl,--allow-multiple-definition")
+            .arg("bash"))?;
         let _ = run(CommandSpec::new("readelf").arg("-h").arg(&full_target));
         Ok(())
     }

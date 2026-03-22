@@ -6,6 +6,15 @@ use crate::fs_utils::{
 };
 use crate::types::{Action, Context, RecipePaths, Result};
 
+#[macro_export]
+macro_rules! fetch_wrap {
+    ($type: ty) => {
+        fn fetch(&self, ctx: &Context) -> Result<()> {
+            <Self as $type>::fetch(self, ctx)
+        }
+    };
+}
+
 pub trait Package {
     fn name(&self) -> &'static str;
 
@@ -45,13 +54,11 @@ pub trait Package {
         patches.sort();
         for patch in patches {
             println!("  -> {}", patch.display());
-            run(
-                CommandSpec::new("patch")
-                    .arg("-N")
-                    .arg("-p1")
-                    .cwd(&paths.src)
-                    .stdin_file(&patch),
-            )?;
+            run(CommandSpec::new("patch")
+                .arg("-N")
+                .arg("-p1")
+                .cwd(&paths.src)
+                .stdin_file(&patch))?;
         }
         touch(&paths.stamp.join("patch"))?;
         Ok(())
@@ -65,7 +72,11 @@ pub trait Package {
 
     fn clean(&self, ctx: &Context) -> Result<()> {
         let paths = self.paths(ctx);
-        println!("[packages][{}] cleaning {}...", self.name(), paths.root.display());
+        println!(
+            "[packages][{}] cleaning {}...",
+            self.name(),
+            paths.root.display()
+        );
         if paths.root.exists() {
             fs::remove_dir_all(&paths.root)?;
         }
@@ -114,14 +125,12 @@ pub trait TarballFetch: Package {
         download_file(&tarball, &self.tarball_url(), &paths.root)?;
 
         ensure_dir(&paths.src)?;
-        run(
-            CommandSpec::new("tar")
-                .arg("-xf")
-                .arg(&tarball)
-                .arg("--strip-components=1")
-                .arg("-C")
-                .arg(&paths.src),
-        )?;
+        run(CommandSpec::new("tar")
+            .arg("-xf")
+            .arg(&tarball)
+            .arg("--strip-components=1")
+            .arg("-C")
+            .arg(&paths.src))?;
         touch(&paths.stamp.join("fetch"))?;
         Ok(())
     }
@@ -145,18 +154,14 @@ pub trait GitCloneFetch: Package {
             fs::remove_dir_all(&paths.src)?;
         }
         println!("  cloning {} at {}...", self.git_url(), self.git_commit());
-        run(
-            CommandSpec::new("git")
-                .arg("clone")
-                .arg(self.git_url())
-                .arg(&paths.src),
-        )?;
-        run(
-            CommandSpec::new("git")
-                .arg("checkout")
-                .arg(self.git_commit())
-                .cwd(&paths.src),
-        )?;
+        run(CommandSpec::new("git")
+            .arg("clone")
+            .arg(self.git_url())
+            .arg(&paths.src))?;
+        run(CommandSpec::new("git")
+            .arg("checkout")
+            .arg(self.git_commit())
+            .cwd(&paths.src))?;
         touch(&paths.stamp.join("fetch"))?;
         Ok(())
     }
