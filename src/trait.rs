@@ -71,11 +71,20 @@ pub trait Package {
         Ok(())
     }
 
+    fn dependencies(&self) -> Vec<Box<dyn Package>> {
+        Vec::new()
+    }
+
     fn make(&self, ctx: &Context) -> Result<()> {
         section(format!(
             "begin install workflow for package `{}`",
             self.name()
         ));
+
+        for dep in self.dependencies() {
+            dep.make(ctx)?;
+        }
+
         build_relibc(ctx)?;
 
         let paths = self.calc_paths(ctx);
