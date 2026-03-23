@@ -17,6 +17,7 @@ use package::bash::Bash;
 use package::busybox::Busybox;
 use package::ncurses::Ncurses;
 use package::tinycc::TinyCc;
+use package::vim::Vim;
 use r#trait::Package;
 use types::{Action, Context, Result};
 
@@ -35,6 +36,7 @@ fn package_by_name(name: &str) -> Option<Box<dyn Package>> {
         "busybox" => Some(Box::new(Busybox)),
         "ncurses" => Some(Box::new(Ncurses)),
         "tcc" | "tinycc" => Some(Box::new(TinyCc)),
+        "vim" => Some(Box::new(Vim)),
         "base" => Some(Box::new(BasePackage)),
         _ => None,
     }
