@@ -1,4 +1,5 @@
 use crate::{
+    command::{CommandSpec, run},
     fs_utils::{ensure_dir, touch},
     types::{PackagePaths, Result},
 };
@@ -19,4 +20,11 @@ where
     }
 
     Ok(())
+}
+
+pub fn mount_sysroot() -> Result<()> {
+    run(CommandSpec::new("sudo")
+        .arg("mount")
+        .arg("../../disk.img")
+        .arg("../../sysroot"))
 }
