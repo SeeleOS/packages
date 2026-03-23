@@ -14,6 +14,7 @@ use std::process;
 
 use package::bash::Bash;
 use package::busybox::Busybox;
+use package::ncurses::Ncurses;
 use package::tinycc::TinyCc;
 use r#trait::Package;
 use types::{Action, Context, Result};
@@ -30,6 +31,7 @@ fn package_by_name(name: &str) -> Option<Box<dyn Package>> {
     match name {
         "bash" => Some(Box::new(Bash)),
         "busybox" => Some(Box::new(Busybox)),
+        "ncurses" => Some(Box::new(Ncurses)),
         "tcc" | "tinycc" => Some(Box::new(TinyCc)),
         "base" => Some(Box::new(BasePackage)),
         _ => None,
