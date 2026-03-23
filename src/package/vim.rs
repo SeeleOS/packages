@@ -56,8 +56,24 @@ impl Package for Vim {
         let paths = self.calc_paths(ctx);
         let source = paths.src.join("src/vim");
         let target = ctx.install_dir.join("vim");
+        let sysroot = ctx
+            .install_dir
+            .parent()
+            .ok_or("install_dir has no parent")?;
+        let runtime_source = paths.src.join("runtime");
+        let runtime_target = sysroot.join("misc/vim");
+
         copy_file_with_sudo(&source, &target)?;
         verify_same_size(&source, &target)?;
+        run(CommandSpec::new("sudo")
+            .arg("mkdir")
+            .arg("-p")
+            .arg(&runtime_target))?;
+        run(CommandSpec::new("sudo")
+            .arg("cp")
+            .arg("-a")
+            .arg(runtime_source.join("."))
+            .arg(&runtime_target))?;
         Ok(())
     }
 }
