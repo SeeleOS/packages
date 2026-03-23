@@ -1,5 +1,6 @@
 use std::ffi::OsStr;
 use std::fs;
+use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 
 use crate::command::{CommandSpec, capture, run};
@@ -8,7 +9,17 @@ use crate::types::Result;
 
 pub fn ensure_dir(path: &Path) -> Result<()> {
     detail(format!("ensuring directory {}", path.display()));
-    fs::create_dir_all(path)?;
+    match fs::create_dir_all(path) {
+        Ok(()) => {}
+        Err(err) if err.kind() == ErrorKind::PermissionDenied => {
+            detail(format!(
+                "permission denied for {}, retrying with sudo mkdir -p",
+                path.display()
+            ));
+            run(CommandSpec::new("sudo").arg("mkdir").arg("-p").arg(path))?;
+        }
+        Err(err) => return Err(err.into()),
+    }
     Ok(())
 }
 
