@@ -48,7 +48,9 @@ impl Package for Vim {
     }
 
     fn build(&self, ctx: &Context) -> Result<()> {
-        run(CommandSpec::new("make").cwd(&self.calc_paths(ctx).src))?;
+        run(CommandSpec::new("make")
+            .cwd(&self.calc_paths(ctx).src)
+            .env("VIMRUNTIMEDIR", "/misc/vim"))?;
         Ok(())
     }
 
