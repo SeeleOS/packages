@@ -6,6 +6,7 @@ mod install;
 mod meta_pkg;
 mod misc;
 mod package;
+mod trace;
 mod r#trait;
 mod types;
 
@@ -20,6 +21,7 @@ use r#trait::Package;
 use types::{Action, Context, Result};
 
 use crate::package::base::BasePackage;
+use crate::trace::{detail, section};
 
 fn usage() {
     eprintln!("Usage:");
@@ -60,7 +62,17 @@ fn run() -> Result<()> {
         process::exit(1);
     }
 
+    section(format!(
+        "starting package action: action=`{}` package=`{}`",
+        action_name, pkg_name
+    ));
     let ctx = Context::discover()?;
+    detail(format!(
+        "resolved context: packages_root={} install_dir={} relibc_root={}",
+        ctx.packages_root.display(),
+        ctx.install_dir.display(),
+        ctx.relibc_root.display()
+    ));
     let pkg = package_by_name(&pkg_name).ok_or_else(|| format!("unknown package: {pkg_name}"))?;
     pkg.run(&ctx, action)
 }

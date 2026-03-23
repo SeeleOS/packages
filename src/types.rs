@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use crate::fs_utils::ensure_dir;
+use crate::trace::detail;
 
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
@@ -33,9 +34,15 @@ pub struct Context {
 impl Context {
     pub fn discover() -> Result<Self> {
         let cwd = std::env::current_dir()?;
+        detail(format!(
+            "discovering package context from cwd={}",
+            cwd.display()
+        ));
         let packages_root = if cwd.join("README.md").is_file() && cwd.join("bash").is_dir() {
+            detail("detected packages root from current directory");
             cwd
         } else if cwd.join("packages").join("README.md").is_file() {
+            detail("detected packages root from nested `packages/` directory");
             cwd.join("packages")
         } else {
             return Err(
@@ -46,6 +53,7 @@ impl Context {
             .parent()
             .ok_or("packages directory has no parent")?
             .to_path_buf();
+        detail(format!("using project base directory {}", base.display()));
         Ok(Self {
             relibc_root: base.join("relibc-seele"),
             relibc_path: base.join("relibc-seele/target/x86_64-seele/release"),
@@ -68,6 +76,10 @@ pub struct PackagePaths {
 
 impl PackagePaths {
     pub fn ensure(&self) -> Result<()> {
+        detail(format!(
+            "ensuring package workspace {}",
+            self.root.display()
+        ));
         ensure_dir(&self.root)?;
         ensure_dir(&self.src)?;
         ensure_dir(&self.stamp)?;

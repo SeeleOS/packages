@@ -4,6 +4,7 @@ use crate::build::build_relibc;
 use crate::command::{CommandSpec, run};
 use crate::fs_utils::{ensure_dir, list_patch_files, touch};
 use crate::misc::{mount_sysroot, with_stamp};
+use crate::trace::{package, package_detail, section};
 use crate::types::{Action, Context, PackagePaths, Result};
 pub trait Package {
     fn name(&self) -> &'static str;
@@ -30,24 +31,24 @@ pub trait Package {
         ensure_dir(&paths.stamp)?;
         let mut patches = list_patch_files(&paths.patches)?;
         if patches.is_empty() {
-            println!("[packages][{}] no patches", self.name());
+            package(self.name(), "no patches to apply");
             touch(&paths.stamp.join("patch"))?;
             return Ok(());
         }
-        println!(
-            "[packages][{}] applying patches from {}...",
+        package(
             self.name(),
-            paths.patches.display()
+            format!("applying patches from {}", paths.patches.display()),
         );
         patches.sort();
         for patch in patches {
-            println!("  -> {}", patch.display());
+            package_detail(self.name(), format!("applying patch {}", patch.display()));
             run(CommandSpec::new("patch")
                 .arg("-N")
                 .arg("-p1")
                 .cwd(&paths.src)
                 .stdin_file(&patch))?;
         }
+        package(self.name(), "patch phase complete");
         touch(&paths.stamp.join("patch"))?;
         Ok(())
     }
@@ -60,40 +61,66 @@ pub trait Package {
 
     fn clean(&self, ctx: &Context) -> Result<()> {
         let paths = self.calc_paths(ctx);
-        println!(
-            "[packages][{}] cleaning {}...",
-            self.name(),
-            paths.root.display()
-        );
+        package(self.name(), format!("cleaning {}", paths.root.display()));
         if paths.root.exists() {
             fs::remove_dir_all(&paths.root)?;
+            package_detail(self.name(), "workspace removed");
+        } else {
+            package_detail(self.name(), "workspace already absent");
         }
         Ok(())
     }
 
     fn make(&self, ctx: &Context) -> Result<()> {
+        section(format!(
+            "begin install workflow for package `{}`",
+            self.name()
+        ));
         build_relibc(ctx)?;
 
         let paths = self.calc_paths(ctx);
+        package_detail(
+            self.name(),
+            format!(
+                "workspace root={} src={} build={} stamp={}",
+                paths.root.display(),
+                paths.src.display(),
+                paths.build.display(),
+                paths.stamp.display()
+            ),
+        );
 
         mount_sysroot()?;
 
+        package(self.name(), "phase: clean");
         self.clean(ctx)?;
+        package(self.name(), "phase: ensure workspace");
         paths.ensure()?;
+        package(self.name(), "phase: fetch");
         self.fetch(ctx)?;
+        package(self.name(), "phase: ensure workspace");
         paths.ensure()?;
+        package(self.name(), "phase: patch");
         self.patch(ctx)?;
+        package(self.name(), "phase: ensure workspace");
         paths.ensure()?;
+        package(self.name(), "phase: configure");
         self.configure(ctx)?;
+        package(self.name(), "phase: ensure workspace");
         paths.ensure()?;
+        package(self.name(), "phase: build");
         self.build(ctx)?;
+        package(self.name(), "phase: ensure workspace");
         paths.ensure()?;
+        package(self.name(), "phase: install");
         self.install(ctx)?;
+        package(self.name(), "install workflow complete");
 
         Ok(())
     }
 
     fn run(&self, ctx: &Context, action: Action) -> Result<()> {
+        package(self.name(), format!("dispatching action {:?}", action));
         match action {
             Action::Install => self.make(ctx),
             Action::Clean => self.clean(ctx),
