@@ -100,6 +100,7 @@ pub trait GitCloneFetch: Package {
         run(CommandSpec::new("git")
             .arg("clone")
             .arg(self.git_url())
+            .arg("--depth=1")
             .arg(&paths.src))?;
         run(CommandSpec::new("git")
             .arg("checkout")
