@@ -2,6 +2,7 @@ use crate::command::{CommandSpec, run};
 use crate::fetch::GitCloneFetch;
 use crate::fetch_wrap;
 use crate::fs_utils::{copy_file_with_sudo, verify_same_size};
+use crate::package::ncurses::Ncurses;
 use crate::r#trait::Package;
 use crate::types::{Context, Result};
 
@@ -10,6 +11,10 @@ pub struct Vim;
 impl Package for Vim {
     fn name(&self) -> &'static str {
         "vim"
+    }
+
+    fn dependencies(&self) -> Vec<Box<dyn Package>> {
+        vec![Box::new(Ncurses)]
     }
 
     fetch_wrap!(GitCloneFetch);
