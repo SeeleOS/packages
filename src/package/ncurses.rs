@@ -20,7 +20,7 @@ impl Package for Ncurses {
     fn configure(&self, ctx: &Context) -> Result<()> {
         let paths = self.calc_paths(ctx);
 
-        let build_triplet = capture(CommandSpec::new("../config.guess").cwd(&paths.src))?;
+        let build_triplet = capture(CommandSpec::new("./config.guess").cwd(&paths.src))?;
 
         run(CommandSpec::new("../configure")
             .cwd(&paths.build)
