@@ -26,6 +26,8 @@ pub struct Context {
     pub relibc_root: PathBuf,
     pub relibc_path: PathBuf,
     pub install_dir: PathBuf,
+    pub system_include_dir: PathBuf,
+    pub system_lib_dir: PathBuf,
 }
 
 impl Context {
@@ -48,6 +50,8 @@ impl Context {
             relibc_root: base.join("relibc-seele"),
             relibc_path: base.join("relibc-seele/target/x86_64-seele/release"),
             install_dir: base.join("sysroot/programs"),
+            system_include_dir: base.join("sysroot/misc/libs/system_include"),
+            system_lib_dir: base.join("sysroot/misc/libs/system_lib"),
             packages_root,
         })
     }
