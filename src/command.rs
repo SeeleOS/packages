@@ -7,6 +7,13 @@ use std::process::{Command, Stdio};
 use crate::trace::{command, command_detail};
 use crate::types::Result;
 
+pub fn make<'a>() -> CommandSpec<'a> {
+    let jobs = std::thread::available_parallelism()
+        .map(|count| count.get())
+        .unwrap_or(1);
+    CommandSpec::new("make").arg(format!("-j{jobs}"))
+}
+
 pub fn run(spec: CommandSpec<'_>) -> Result<()> {
     log_command("run", &spec);
     let mut cmd = Command::new(spec.program);

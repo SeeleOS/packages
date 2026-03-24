@@ -1,4 +1,4 @@
-use crate::command::{CommandSpec, run};
+use crate::command::{CommandSpec, make, run};
 use crate::fetch::GitCloneFetch;
 use crate::fetch_wrap;
 use crate::fs_utils::{copy_file_with_sudo, verify_same_size};
@@ -53,7 +53,7 @@ impl Package for Vim {
     }
 
     fn build(&self, ctx: &Context) -> Result<()> {
-        run(CommandSpec::new("make")
+        run(make()
             .cwd(&self.calc_paths(ctx).src)
             .env("VIMRUNTIMEDIR", "/misc/vim"))?;
         Ok(())

@@ -1,5 +1,5 @@
 use crate::build::{CC, build_relibc};
-use crate::command::{CommandSpec, run};
+use crate::command::{CommandSpec, make, run};
 use crate::fetch::GitCloneFetch;
 use crate::fs_utils::{ensure_dir, remove_if_exists};
 use crate::install::Install;
@@ -35,7 +35,7 @@ impl Package for TinyCc {
 
         let full_target = paths.build.join("tcc");
         remove_if_exists(&full_target)?;
-        run(CommandSpec::new("make")
+        run(make()
             .arg("-f")
             .arg("Makefile")
             .arg(format!("CC={}", CC))

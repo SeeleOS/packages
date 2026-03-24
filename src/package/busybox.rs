@@ -3,7 +3,7 @@ use std::fs;
 use std::path::PathBuf;
 
 use crate::build::CC;
-use crate::command::{CommandSpec, capture, run};
+use crate::command::{CommandSpec, capture, make, run};
 use crate::fetch::TarballFetch;
 use crate::fetch_wrap;
 use crate::fs_utils::{copy_file_with_sudo, ensure_dir, remove_if_exists, verify_same_size};
@@ -35,7 +35,7 @@ impl Package for Busybox {
     fn build(&self, ctx: &Context) -> Result<()> {
         let paths = self.calc_paths(ctx);
 
-        run(CommandSpec::new("make")
+        run(make()
             .arg("-C")
             .arg(&paths.src)
             .arg(format!("O={}", paths.build.display()))
@@ -84,7 +84,7 @@ fn load_config(ctx: &Context, paths: &PackagePaths) -> Result<()> {
     let config_in = ctx.packages_root.join("busybox/seele.config");
     let build_config = paths.build.join(".config");
     remove_if_exists(&build_config)?;
-    run(CommandSpec::new("make")
+    run(make()
         .arg("-C")
         .arg(&paths.src)
         .arg(format!("O={}", paths.build.display()))

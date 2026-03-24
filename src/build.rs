@@ -1,5 +1,5 @@
 use crate::{
-    command::{CommandSpec, run},
+    command::{make, run},
     trace::section,
     types::{Context, Result},
 };
@@ -8,7 +8,7 @@ pub const CC: &str = "clang --target=x86_64-seele";
 
 pub fn build_relibc(ctx: &Context) -> Result<()> {
     section(format!("building relibc in {}", ctx.relibc_root.display()));
-    run(CommandSpec::new("make")
+    run(make()
         .cwd(&ctx.relibc_root)
         .env_remove("CARGO")
         .env_remove("CARGO_MANIFEST_DIR")

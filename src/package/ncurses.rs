@@ -1,5 +1,5 @@
 use crate::build::CC;
-use crate::command::{CommandSpec, capture, run};
+use crate::command::{CommandSpec, capture, make, run};
 use crate::fetch::TarballFetch;
 use crate::fetch_wrap;
 use crate::fs_utils::{copy_file_with_sudo, ensure_dir, verify_same_size};
@@ -49,7 +49,7 @@ impl Package for Ncurses {
     }
 
     fn build(&self, ctx: &Context) -> Result<()> {
-        run(CommandSpec::new("make").cwd(&self.calc_paths(ctx).build))?;
+        run(make().cwd(&self.calc_paths(ctx).build))?;
         Ok(())
     }
 
