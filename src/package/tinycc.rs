@@ -1,54 +1,53 @@
 use crate::build::CC;
 use crate::command::{CommandSpec, make, run};
-use crate::fetch::GitCloneFetch;
 use crate::fs_utils::remove_if_exists;
-use crate::install::Install;
-use crate::r#trait::Package;
-use crate::types::{Context, PackagePaths, Result};
-use crate::{fetch_wrap, install_wrap};
+use crate::install::install_file;
+use crate::make_package;
 
-pub struct TinyCc;
+make_package!(
+    TinyCc,
+    "tinycc",
+    git_url = "https://github.com/TinyCC/tinycc.git",
+    git_commit = "fada98b",
+    package_impl = {
+        fn install_name(&self) -> &'static str {
+            "tcc"
+        }
 
-impl Package for TinyCc {
-    fn name(&self) -> &'static str {
-        "tinycc"
+        fn configure(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
+            run(CommandSpec::new("./configure")
+                .arg("--prefix=/")
+                .cwd(&self.calc_paths(ctx).src))?;
+            Ok(())
+        }
+
+        fn build(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
+            let paths = self.calc_paths(ctx);
+            build_tcc_tools(&paths)?;
+
+            let full_target = paths.build.join("tcc");
+            remove_if_exists(&full_target)?;
+            run(make()
+                .arg("-f")
+                .arg("Makefile")
+                .arg(format!("CC={}", CC))
+                .arg("tcc")
+                .cwd(&paths.src))?;
+
+            std::fs::rename(paths.src.join("tcc"), &full_target)?;
+            Ok(())
+        }
+
+        fn install(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
+            let paths = self.calc_paths(ctx);
+            let source = paths.build.join("tcc");
+            let target = ctx.install_dir.join("tcc");
+            install_file(self, &source, &target)
+        }
     }
+);
 
-    fn install_name(&self) -> &'static str {
-        "tcc"
-    }
-
-    fetch_wrap!(GitCloneFetch);
-    install_wrap!();
-
-    fn configure(&self, ctx: &Context) -> Result<()> {
-        run(CommandSpec::new("./configure")
-            .arg("--prefix=/")
-            .cwd(&self.calc_paths(ctx).src))?;
-        Ok(())
-    }
-
-    fn build(&self, ctx: &Context) -> Result<()> {
-        let paths = self.calc_paths(ctx);
-
-        build_tcc_tools(&paths)?;
-
-        let full_target = paths.build.join("tcc");
-        remove_if_exists(&full_target)?;
-        run(make()
-            .arg("-f")
-            .arg("Makefile")
-            .arg(format!("CC={}", CC))
-            .arg("tcc")
-            .cwd(&paths.src))?;
-
-        std::fs::rename(paths.src.join("tcc"), &full_target)?;
-
-        Ok(())
-    }
-}
-
-fn build_tcc_tools(paths: &PackagePaths) -> Result<()> {
+fn build_tcc_tools(paths: &crate::types::PackagePaths) -> crate::types::Result<()> {
     let c2str = paths.src.join("c2str.exe");
     if !c2str.is_file() {
         println!("Building host tool c2str.exe...");
@@ -68,20 +67,4 @@ fn build_tcc_tools(paths: &PackagePaths) -> Result<()> {
             .cwd(&paths.src))?;
     }
     Ok(())
-}
-
-impl GitCloneFetch for TinyCc {
-    fn git_url(&self) -> &'static str {
-        "https://github.com/TinyCC/tinycc.git"
-    }
-
-    fn git_commit(&self) -> &'static str {
-        "fada98b"
-    }
-}
-
-impl Install for TinyCc {
-    fn binary_name(&self) -> &'static str {
-        "tcc"
-    }
 }

@@ -4,84 +4,70 @@ use std::path::PathBuf;
 
 use crate::build::{CC, build_make_in};
 use crate::command::{CommandSpec, capture, make, run};
-use crate::fetch::TarballFetch;
-use crate::fetch_wrap;
-use crate::fs_utils::{remove_if_exists};
+use crate::fs_utils::remove_if_exists;
 use crate::install::install_file;
-use crate::r#trait::Package;
-use crate::types::{Context, PackagePaths, Result};
+use crate::make_package;
 
-pub struct Busybox;
-
-impl Package for Busybox {
-    fn name(&self) -> &'static str {
-        "busybox"
-    }
-
-    fetch_wrap!(TarballFetch);
-
-    fn configure(&self, ctx: &Context) -> Result<()> {
-        let paths = self.calc_paths(ctx);
-
-        load_config(ctx, &paths)?;
-
-        run(CommandSpec::new("sh").arg("-c").arg(format!(
-            "yes \"\" | make -C '{}' O='{}' HOSTCC='gcc' oldconfig >/dev/null",
-            paths.src.display(),
-            paths.build.display()
-        )))?;
-        Ok(())
-    }
-
-    fn build(&self, ctx: &Context) -> Result<()> {
-        let paths = self.calc_paths(ctx);
-
-        build_make_in(
-            &paths.src,
-            Vec::new(),
-            vec![
-                format!("O={}", paths.build.display()),
-                "HOSTCC=gcc".to_string(),
-                format!("CC={}", CC),
-                "busybox".to_string(),
-            ],
-        )
-    }
-
-    fn install(&self, ctx: &Context) -> Result<()> {
-        let paths = self.calc_paths(ctx);
-        let source = paths.build.join("busybox");
-        let busybox_bin = ctx.install_dir.join("busybox");
-        let applets = busybox_applets(&paths)?;
-
-        println!(
-            "[packages][busybox] installing {}...",
-            busybox_bin.display()
-        );
-        install_file(self, &source, &busybox_bin)?;
-        for applet in &applets {
-            install_busybox_symlink(&ctx.install_dir, applet)?;
+make_package!(
+    Busybox,
+    "busybox",
+    tarball_url = "https://mirrors.aliyun.com/slackware/slackware64-current/source/installer/sources/busybox/busybox-1.37.0.tar.bz2",
+    package_impl = {
+        fn configure(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
+            let paths = self.calc_paths(ctx);
+            load_config(ctx, &paths)?;
+            run(CommandSpec::new("sh").arg("-c").arg(format!(
+                "yes \"\" | make -C '{}' O='{}' HOSTCC='gcc' oldconfig >/dev/null",
+                paths.src.display(),
+                paths.build.display()
+            )))?;
+            Ok(())
         }
-        run(CommandSpec::new("sync"))?;
 
-        let busybox_bin = ctx.install_dir.join("busybox");
-        let ls_link = ctx.install_dir.join("ls");
-        if !busybox_bin.is_file() {
-            return Err(format!("{} was not installed", busybox_bin.display()).into());
+        fn build(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
+            let paths = self.calc_paths(ctx);
+            build_make_in(
+                &paths.src,
+                Vec::new(),
+                vec![
+                    format!("O={}", paths.build.display()),
+                    "HOSTCC=gcc".to_string(),
+                    format!("CC={}", CC),
+                    "busybox".to_string(),
+                ],
+            )
         }
-        if capture(CommandSpec::new("test").arg("-L").arg(&ls_link)).is_err() {
-            return Err(format!("{} is not a symlink", ls_link.display()).into());
+
+        fn install(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
+            let paths = self.calc_paths(ctx);
+            let source = paths.build.join("busybox");
+            let busybox_bin = ctx.install_dir.join("busybox");
+            let applets = busybox_applets(&paths)?;
+
+            println!("[packages][busybox] installing {}...", busybox_bin.display());
+            install_file(self, &source, &busybox_bin)?;
+            for applet in &applets {
+                install_busybox_symlink(&ctx.install_dir, applet)?;
+            }
+            run(CommandSpec::new("sync"))?;
+
+            let ls_link = ctx.install_dir.join("ls");
+            if !busybox_bin.is_file() {
+                return Err(format!("{} was not installed", busybox_bin.display()).into());
+            }
+            if capture(CommandSpec::new("test").arg("-L").arg(&ls_link)).is_err() {
+                return Err(format!("{} is not a symlink", ls_link.display()).into());
+            }
+            println!(
+                "[packages][busybox][OK]: busybox and {} symlink applets installed.",
+                applets.len()
+            );
+            Ok(())
         }
-        println!(
-            "[packages][busybox][OK]: busybox and {} symlink applets installed.",
-            applets.len()
-        );
-        Ok(())
     }
-}
+);
 
-// Loads the custom seele.config into busybox
-fn load_config(ctx: &Context, paths: &PackagePaths) -> Result<()> {
+fn load_config(ctx: &crate::types::Context, paths: &crate::types::PackagePaths) -> crate::types::Result<()> {
     let config_in = ctx.packages_root.join("busybox/seele.config");
     let build_config = paths.build.join(".config");
     remove_if_exists(&build_config)?;
@@ -109,17 +95,7 @@ fn load_config(ctx: &Context, paths: &PackagePaths) -> Result<()> {
     }
 
     fs::write(&build_config, config)?;
-
     Ok(())
-}
-
-impl TarballFetch for Busybox {
-    fn tarball_url(&self) -> Vec<&'static str> {
-        vec![
-            "https://mirrors.aliyun.com/slackware/slackware64-current/source/installer/sources/busybox/busybox-1.37.0.tar.bz2",
-            "https://busybox.net/downloads/busybox-1.37.0.tar.bz2",
-        ]
-    }
 }
 
 fn remove_config_key(config: &mut String, key: &str) {
@@ -137,7 +113,7 @@ fn remove_config_key(config: &mut String, key: &str) {
     };
 }
 
-fn busybox_applets(paths: &PackagePaths) -> Result<Vec<PathBuf>> {
+fn busybox_applets(paths: &crate::types::PackagePaths) -> crate::types::Result<Vec<PathBuf>> {
     let autoconf = paths.build.join("include/autoconf.h");
     let applets = paths.build.join("include/applets.h");
     let output = capture(
@@ -170,16 +146,16 @@ fn busybox_applets(paths: &PackagePaths) -> Result<Vec<PathBuf>> {
     Ok(entries.into_iter().collect())
 }
 
-fn applet_path(dir: &str, name: &str) -> Result<PathBuf> {
+fn applet_path(dir: &str, name: &str) -> crate::types::Result<PathBuf> {
     match dir {
         "BB_DIR_BIN" | "BB_DIR_SBIN" | "BB_DIR_USR_BIN" | "BB_DIR_USR_SBIN" | "BB_DIR_ROOT" => {
             Ok(PathBuf::from(name))
         }
-        other => return Err(format!("unknown busybox applet dir: {other}").into()),
+        other => Err(format!("unknown busybox applet dir: {other}").into()),
     }
 }
 
-fn install_busybox_symlink(install_dir: &PathBuf, link_rel: &PathBuf) -> Result<()> {
+fn install_busybox_symlink(install_dir: &PathBuf, link_rel: &PathBuf) -> crate::types::Result<()> {
     let link = install_dir.join(link_rel);
     run(CommandSpec::new("sudo")
         .arg("ln")
