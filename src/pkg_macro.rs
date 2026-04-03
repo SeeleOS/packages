@@ -88,3 +88,12 @@ macro_rules! make_autotools_package {
         }
     };
 }
+
+#[macro_export]
+macro_rules! make_autotools_packages {
+    ($({ $($inner:tt)* }),* $(,)?) => {
+        $(
+            $crate::make_autotools_package!($($inner)*);
+        )*
+    };
+}
