@@ -22,30 +22,31 @@ impl Package for Ncurses {
         let paths = self.calc_paths(ctx);
         configure_autotools_in(
             &paths.src,
-            with_envs(CommandSpec::new("../configure").cwd(&paths.build), &[("CC", CC)]),
+            with_envs(
+                CommandSpec::new("../configure").cwd(&paths.build),
+                vec![("CC".to_string(), CC.to_string())],
+            ),
             ctx,
-            &[
-                "--without-ada",
-                "--without-cxx",
-                "--without-cxx-binding",
-                "--without-manpages",
-                "--without-tests",
-                "--without-progs",
-                "--with-normal",
-                "--with-termlib",
-                "--disable-db-install",
-                "--with-fallbacks=xterm,vt100,linux",
-                "--disable-stripping",
-                "--disable-widec",
-            ],
             vec![
-                format!("--with-build-cc={BUILD_CC}"),
+                "--without-ada".to_string(),
+                "--without-cxx".to_string(),
+                "--without-cxx-binding".to_string(),
+                "--without-manpages".to_string(),
+                "--without-tests".to_string(),
+                "--without-progs".to_string(),
+                "--with-normal".to_string(),
+                "--with-termlib".to_string(),
+                "--disable-db-install".to_string(),
+                "--with-fallbacks=xterm,vt100,linux".to_string(),
+                "--disable-stripping".to_string(),
+                "--disable-widec".to_string(),
             ],
+            vec![format!("--with-build-cc={BUILD_CC}")],
         )
     }
 
     fn build(&self, ctx: &Context) -> Result<()> {
-        build_make_in(&self.calc_paths(ctx).build, &[], Vec::new())
+        build_make_in(&self.calc_paths(ctx).build, Vec::new(), Vec::new())
     }
 
     fn install(&self, ctx: &Context) -> Result<()> { install_make_in(&self.calc_paths(ctx).build, ctx) }

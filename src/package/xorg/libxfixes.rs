@@ -13,7 +13,7 @@ impl Package for LibXfixes {
     fn name(&self) -> &'static str { "libxfixes" }
     fn dependencies(&self) -> Vec<Box<dyn Package>> { vec![Box::new(XorgProto), Box::new(LibX11)] }
     fetch_wrap!(GitCloneFetch);
-    fn configure(&self, ctx: &Context) -> Result<()> { configure_meson(self, ctx, &[], Vec::new()) }
+    fn configure(&self, ctx: &Context) -> Result<()> { configure_meson(self, ctx, Vec::new(), Vec::new()) }
     fn build(&self, ctx: &Context) -> Result<()> { build_meson(self, ctx) }
     fn install(&self, ctx: &Context) -> Result<()> { install_meson(self, ctx) }
 }

@@ -25,7 +25,7 @@ pub fn build_relibc(ctx: &Context) -> Result<()> {
 pub fn build_autotools_with(
     pkg: &dyn Package,
     ctx: &Context,
-    envs: &[(&str, &str)],
+    envs: Vec<(String, String)>,
     extra_args: Vec<String>,
 ) -> Result<()> {
     let paths = pkg.calc_paths(ctx);
@@ -53,7 +53,7 @@ pub fn build_meson(pkg: &dyn Package, ctx: &Context) -> Result<()> {
 
 pub fn build_make_in(
     cwd: &Path,
-    envs: &[(&str, &str)],
+    envs: Vec<(String, String)>,
     extra_args: Vec<String>,
 ) -> Result<()> {
     let mut cmd = with_envs(make().cwd(cwd), envs);

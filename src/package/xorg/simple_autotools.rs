@@ -2,7 +2,12 @@ use crate::layout::APPDEFAULTDIR;
 use crate::make_autotools_packages;
 use crate::package::xorg::{Freetype2, LibXau, LibXfixes, LibXkbfile, XorgProto};
 
-const LIBXFONT2_ARGS: &[&str] = &["--disable-devel-docs", "--disable-selective-werror"];
+fn libxfont2_args() -> Vec<String> {
+    vec![
+        "--disable-devel-docs".to_string(),
+        "--disable-selective-werror".to_string(),
+    ]
+}
 
 fn libx11_extra_args(ctx: &crate::types::Context) -> Vec<String> {
     vec![format!(
@@ -25,7 +30,7 @@ make_autotools_packages!(
     { LibXext, "libxext", tarball_url = "https://www.x.org/archive/individual/lib/libXext-1.3.7.tar.gz", dependencies = [XorgProto, LibX11] },
     { LibXi, "libxi", tarball_url = "https://www.x.org/archive/individual/lib/libXi-1.8.2.tar.gz", dependencies = [XorgProto, LibXext, LibXfixes] },
     { LibX11, "libx11", tarball_url = "https://www.x.org/archive/individual/lib/libX11-1.8.13.tar.xz", dependencies = [XorgProto, LibXcb, Xtrans], configure = { dynamic_args = libx11_extra_args } },
-    { LibXfont2, "libxfont2", tarball_url = "https://www.x.org/archive/individual/lib/libXfont2-2.0.7.tar.gz", dependencies = [XorgUtilMacros, XorgProto, LibX11, Xtrans, Freetype2, LibFontenc], configure = { args = LIBXFONT2_ARGS } },
+    { LibXfont2, "libxfont2", tarball_url = "https://www.x.org/archive/individual/lib/libXfont2-2.0.7.tar.gz", dependencies = [XorgUtilMacros, XorgProto, LibX11, Xtrans, Freetype2, LibFontenc], configure = { args = libxfont2_args() } },
     { LibXmu, "libxmu", tarball_url = "https://www.x.org/archive/individual/lib/libXmu-1.3.1.tar.gz", dependencies = [LibXext, LibXt] },
     { LibXrandr, "libxrandr", tarball_url = "https://www.x.org/archive/individual/lib/libXrandr-1.5.5.tar.gz", dependencies = [XorgProto, LibX11, LibXrender, LibXext] },
     { LibXrender, "libxrender", tarball_url = "https://www.x.org/archive/individual/lib/libXrender-0.9.12.tar.gz", dependencies = [XorgProto, LibX11] },

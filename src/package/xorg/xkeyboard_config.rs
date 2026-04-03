@@ -7,7 +7,9 @@ use crate::package::xorg::XorgXkbcomp;
 use crate::r#trait::Package;
 use crate::types::{Context, Result};
 
-const XKEYBOARD_CONFIG_ARGS: &[&str] = &["-Dxorg-rules-symlinks=true"];
+fn xkeyboard_config_args() -> Vec<String> {
+    vec!["-Dxorg-rules-symlinks=true".to_string()]
+}
 
 pub struct XkeyboardConfig;
 
@@ -15,7 +17,7 @@ impl Package for XkeyboardConfig {
     fn name(&self) -> &'static str { "xkeyboard-config" }
     fn dependencies(&self) -> Vec<Box<dyn Package>> { vec![Box::new(XorgXkbcomp)] }
     fetch_wrap!(GitCloneFetch);
-    fn configure(&self, ctx: &Context) -> Result<()> { configure_meson(self, ctx, XKEYBOARD_CONFIG_ARGS, Vec::new()) }
+    fn configure(&self, ctx: &Context) -> Result<()> { configure_meson(self, ctx, xkeyboard_config_args(), Vec::new()) }
     fn build(&self, ctx: &Context) -> Result<()> { build_meson(self, ctx) }
     fn install(&self, ctx: &Context) -> Result<()> { install_meson(self, ctx) }
 }

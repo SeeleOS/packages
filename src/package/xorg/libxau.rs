@@ -13,7 +13,7 @@ impl Package for LibXau {
     fn name(&self) -> &'static str { "libxau" }
     fn dependencies(&self) -> Vec<Box<dyn Package>> { vec![Box::new(XorgProto)] }
     fetch_wrap!(TarballFetch);
-    fn configure(&self, ctx: &Context) -> Result<()> { configure_meson(self, ctx, &[], Vec::new()) }
+    fn configure(&self, ctx: &Context) -> Result<()> { configure_meson(self, ctx, Vec::new(), Vec::new()) }
     fn build(&self, ctx: &Context) -> Result<()> { build_meson(self, ctx) }
     fn install(&self, ctx: &Context) -> Result<()> { install_meson(self, ctx) }
 }

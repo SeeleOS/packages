@@ -15,7 +15,7 @@ impl Package for XorgXeyes {
         vec![Box::new(LibX11), Box::new(LibXt), Box::new(LibXext), Box::new(LibXmu), Box::new(LibXrender), Box::new(LibXi), Box::new(LibXcb)]
     }
     fetch_wrap!(GitCloneFetch);
-    fn configure(&self, ctx: &Context) -> Result<()> { configure_meson(self, ctx, &[], Vec::new()) }
+    fn configure(&self, ctx: &Context) -> Result<()> { configure_meson(self, ctx, Vec::new(), Vec::new()) }
     fn build(&self, ctx: &Context) -> Result<()> { build_meson(self, ctx) }
     fn install(&self, ctx: &Context) -> Result<()> { install_meson(self, ctx) }
 }

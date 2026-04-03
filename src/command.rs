@@ -103,8 +103,8 @@ pub struct CommandSpec<'a> {
     program: &'a str,
     args: Vec<OsString>,
     cwd: Option<&'a Path>,
-    envs: Vec<(&'a str, OsString)>,
-    env_removes: Vec<&'a str>,
+    envs: Vec<(String, OsString)>,
+    env_removes: Vec<String>,
     stdin_file: Option<&'a Path>,
 }
 
@@ -130,13 +130,13 @@ impl<'a> CommandSpec<'a> {
         self
     }
 
-    pub fn env(mut self, key: &'a str, val: impl Into<OsString>) -> Self {
-        self.envs.push((key, val.into()));
+    pub fn env(mut self, key: impl Into<String>, val: impl Into<OsString>) -> Self {
+        self.envs.push((key.into(), val.into()));
         self
     }
 
-    pub fn env_remove(mut self, key: &'a str) -> Self {
-        self.env_removes.push(key);
+    pub fn env_remove(mut self, key: impl Into<String>) -> Self {
+        self.env_removes.push(key.into());
         self
     }
 

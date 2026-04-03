@@ -6,20 +6,22 @@ use crate::install::install_meson;
 use crate::r#trait::Package;
 use crate::types::{Context, Result};
 
-const FREETYPE_ARGS: &[&str] = &[
-    "-Dbrotli=disabled",
-    "-Dbzip2=disabled",
-    "-Dharfbuzz=disabled",
-    "-Dpng=disabled",
-    "-Dzlib=disabled",
-];
+fn freetype_args() -> Vec<String> {
+    vec![
+        "-Dbrotli=disabled".to_string(),
+        "-Dbzip2=disabled".to_string(),
+        "-Dharfbuzz=disabled".to_string(),
+        "-Dpng=disabled".to_string(),
+        "-Dzlib=disabled".to_string(),
+    ]
+}
 
 pub struct Freetype2;
 
 impl Package for Freetype2 {
     fn name(&self) -> &'static str { "freetype2" }
     fetch_wrap!(GitCloneFetch);
-    fn configure(&self, ctx: &Context) -> Result<()> { configure_meson(self, ctx, FREETYPE_ARGS, Vec::new()) }
+    fn configure(&self, ctx: &Context) -> Result<()> { configure_meson(self, ctx, freetype_args(), Vec::new()) }
     fn build(&self, ctx: &Context) -> Result<()> { build_meson(self, ctx) }
     fn install(&self, ctx: &Context) -> Result<()> { install_meson(self, ctx) }
 }

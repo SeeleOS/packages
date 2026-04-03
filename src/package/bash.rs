@@ -26,15 +26,15 @@ impl Package for Bash {
         configure_autotools(
             self,
             ctx,
-            &[
-                ("CC", CC),
-                ("CC_FOR_BUILD", CC_FOR_BUILD),
-                ("CFLAGS_FOR_BUILD", CFLAGS_FOR_BUILD),
-                ("bash_cv_getenv_redef", BASH_CV_GETENV_REDEF),
-                ("bash_cv_getcwd_malloc", BASH_CV_GETCWD_MALLOC),
-                ("bash_cv_func_strchrnul_works", BASH_CV_FUNC_STRCHRNUL_WORKS),
+            vec![
+                ("CC".to_string(), CC.to_string()),
+                ("CC_FOR_BUILD".to_string(), CC_FOR_BUILD.to_string()),
+                ("CFLAGS_FOR_BUILD".to_string(), CFLAGS_FOR_BUILD.to_string()),
+                ("bash_cv_getenv_redef".to_string(), BASH_CV_GETENV_REDEF.to_string()),
+                ("bash_cv_getcwd_malloc".to_string(), BASH_CV_GETCWD_MALLOC.to_string()),
+                ("bash_cv_func_strchrnul_works".to_string(), BASH_CV_FUNC_STRCHRNUL_WORKS.to_string()),
             ],
-            &["--disable-nls", "--without-bash-malloc"],
+            vec!["--disable-nls".to_string(), "--without-bash-malloc".to_string()],
             Vec::new(),
         )
     }
@@ -42,10 +42,10 @@ impl Package for Bash {
     fn build(&self, ctx: &Context) -> Result<()> {
         build_make_in(
             &self.calc_paths(ctx).src,
-            &[
-                ("CC_FOR_BUILD", CC_FOR_BUILD),
-                ("CFLAGS_FOR_BUILD", CFLAGS_FOR_BUILD),
-                ("ADDON_LDFLAGS", ADDON_LDFLAGS),
+            vec![
+                ("CC_FOR_BUILD".to_string(), CC_FOR_BUILD.to_string()),
+                ("CFLAGS_FOR_BUILD".to_string(), CFLAGS_FOR_BUILD.to_string()),
+                ("ADDON_LDFLAGS".to_string(), ADDON_LDFLAGS.to_string()),
             ],
             vec!["bash".to_string()],
         )

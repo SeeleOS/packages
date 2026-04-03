@@ -38,7 +38,7 @@ impl Package for Busybox {
 
         build_make_in(
             &paths.src,
-            &[],
+            Vec::new(),
             vec![
                 format!("O={}", paths.build.display()),
                 "HOSTCC=gcc".to_string(),

@@ -11,10 +11,10 @@ use crate::types::{Context, Result};
 
 pub fn with_envs<'a>(
     mut spec: CommandSpec<'a>,
-    envs: &[(&'a str, &'a str)],
+    envs: Vec<(String, String)>,
 ) -> CommandSpec<'a> {
     for (key, value) in envs {
-        spec = spec.env(key, *value);
+        spec = spec.env(key, value);
     }
     spec
 }
@@ -42,8 +42,8 @@ pub fn with_meson_layout<'a>(spec: CommandSpec<'a>) -> CommandSpec<'a> {
 pub fn configure_autotools(
     pkg: &dyn Package,
     ctx: &Context,
-    envs: &[(&str, &str)],
-    extra_args: &[&str],
+    envs: Vec<(String, String)>,
+    extra_args: Vec<String>,
     extra_dynamic: Vec<String>,
 ) -> Result<()> {
     let paths = pkg.calc_paths(ctx);
@@ -60,7 +60,7 @@ pub fn configure_autotools_in<'a>(
     source_dir: &std::path::Path,
     spec: CommandSpec<'a>,
     ctx: &Context,
-    extra_args: &[&str],
+    extra_args: Vec<String>,
     extra_dynamic: Vec<String>,
 ) -> Result<()> {
     refresh_gnu_config(ctx, source_dir)?;
@@ -83,7 +83,7 @@ pub fn configure_autotools_in<'a>(
 pub fn configure_meson(
     pkg: &dyn Package,
     ctx: &Context,
-    extra_args: &[&str],
+    extra_args: Vec<String>,
     extra_dynamic: Vec<String>,
 ) -> Result<()> {
     let paths = pkg.calc_paths(ctx);

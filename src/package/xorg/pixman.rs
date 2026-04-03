@@ -6,14 +6,20 @@ use crate::install::install_meson;
 use crate::r#trait::Package;
 use crate::types::{Context, Result};
 
-const PIXMAN_ARGS: &[&str] = &["-Dgtk=disabled", "-Dlibpng=disabled", "-Dtests=disabled"];
+fn pixman_args() -> Vec<String> {
+    vec![
+        "-Dgtk=disabled".to_string(),
+        "-Dlibpng=disabled".to_string(),
+        "-Dtests=disabled".to_string(),
+    ]
+}
 
 pub struct Pixman;
 
 impl Package for Pixman {
     fn name(&self) -> &'static str { "pixman" }
     fetch_wrap!(GitCloneFetch);
-    fn configure(&self, ctx: &Context) -> Result<()> { configure_meson(self, ctx, PIXMAN_ARGS, Vec::new()) }
+    fn configure(&self, ctx: &Context) -> Result<()> { configure_meson(self, ctx, pixman_args(), Vec::new()) }
     fn build(&self, ctx: &Context) -> Result<()> { build_meson(self, ctx) }
     fn install(&self, ctx: &Context) -> Result<()> { install_meson(self, ctx) }
 }

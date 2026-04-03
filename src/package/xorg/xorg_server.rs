@@ -9,32 +9,34 @@ use crate::package::xorg::{LibX11, LibXcb, LibXcvt, LibXdamage, LibXext, LibXfix
 use crate::r#trait::Package;
 use crate::types::{Context, Result};
 
-const XORG_SERVER_FLAGS: &[&str] = &[
-    "-Dxorg=true",
-    "-Dxv=false",
-    "-Dxvfb=false",
-    "-Dxephyr=false",
-    "-Dxnest=false",
-    "-Dsuid_wrapper=false",
-    "-Dpciaccess=false",
-    "-Ddpms=false",
-    "-Dscreensaver=false",
-    "-Dxres=false",
-    "-Dxvmc=false",
-    "-Dsystemd_logind=false",
-    "-Dsecure-rpc=false",
-    "-Dudev=false",
-    "-Dudev_kms=false",
-    "-Ddri1=false",
-    "-Ddri2=false",
-    "-Ddri3=false",
-    "-Dint10=false",
-    "-Dvgahw=false",
-    "-Ddrm=false",
-    "-Dglamor=false",
-    "-Dglx=false",
-    "-Dlisten_tcp=false",
-];
+fn xorg_server_flags() -> Vec<String> {
+    vec![
+        "-Dxorg=true".to_string(),
+        "-Dxv=false".to_string(),
+        "-Dxvfb=false".to_string(),
+        "-Dxephyr=false".to_string(),
+        "-Dxnest=false".to_string(),
+        "-Dsuid_wrapper=false".to_string(),
+        "-Dpciaccess=false".to_string(),
+        "-Ddpms=false".to_string(),
+        "-Dscreensaver=false".to_string(),
+        "-Dxres=false".to_string(),
+        "-Dxvmc=false".to_string(),
+        "-Dsystemd_logind=false".to_string(),
+        "-Dsecure-rpc=false".to_string(),
+        "-Dudev=false".to_string(),
+        "-Dudev_kms=false".to_string(),
+        "-Ddri1=false".to_string(),
+        "-Ddri2=false".to_string(),
+        "-Ddri3=false".to_string(),
+        "-Dint10=false".to_string(),
+        "-Dvgahw=false".to_string(),
+        "-Ddrm=false".to_string(),
+        "-Dglamor=false".to_string(),
+        "-Dglx=false".to_string(),
+        "-Dlisten_tcp=false".to_string(),
+    ]
+}
 
 fn xorg_server_args() -> Vec<String> {
     vec![
@@ -53,7 +55,7 @@ impl Package for XorgServer {
         vec![Box::new(XorgUtilMacros), Box::new(XorgProto), Box::new(XorgFontUtil), Box::new(XcbProto), Box::new(XcbUtil), Box::new(Xtrans), Box::new(LibXinerama), Box::new(LibXcvt), Box::new(LibXshmfence), Box::new(LibX11), Box::new(LibXkbfile), Box::new(LibXmu), Box::new(LibXfont2), Box::new(LibXi), Box::new(LibXrender), Box::new(LibXrandr), Box::new(LibXcb), Box::new(LibXfixes), Box::new(LibXext), Box::new(LibXdamage), Box::new(Pixman), Box::new(XorgXkbcomp), Box::new(XkeyboardConfig)]
     }
     fetch_wrap!(GitCloneFetch);
-    fn configure(&self, ctx: &Context) -> Result<()> { configure_meson(self, ctx, XORG_SERVER_FLAGS, xorg_server_args()) }
+    fn configure(&self, ctx: &Context) -> Result<()> { configure_meson(self, ctx, xorg_server_flags(), xorg_server_args()) }
     fn build(&self, ctx: &Context) -> Result<()> { build_meson(self, ctx) }
     fn install(&self, ctx: &Context) -> Result<()> { install_meson(self, ctx)?; xorg_server_install_hook(ctx) }
 }
