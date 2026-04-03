@@ -53,10 +53,11 @@ pub fn mount_sysroot() -> Result<()> {
 }
 
 pub fn sysroot_dir(ctx: &Context) -> Result<PathBuf> {
-    ctx.install_dir
-        .parent()
-        .map(Path::to_path_buf)
-        .ok_or_else(|| "install_dir has no parent".into())
+    Ok(ctx.staging_sysroot_dir.clone())
+}
+
+pub fn deployed_sysroot_dir(ctx: &Context) -> Result<PathBuf> {
+    Ok(ctx.real_sysroot_dir.clone())
 }
 
 pub fn walk_files(root: &Path, out: &mut Vec<PathBuf>) -> Result<()> {

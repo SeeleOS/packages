@@ -32,6 +32,7 @@ use crate::package::xorg;
 fn usage() {
     eprintln!("Usage:");
     eprintln!("  cargo run install <package> [--rebuild] [--ignore-deps]");
+    eprintln!("  cargo run deploy <package> [--rebuild] [--ignore-deps]");
     eprintln!("  cargo run clean <package> [--rebuild] [--ignore-deps]");
 }
 

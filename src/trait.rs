@@ -3,7 +3,8 @@ use std::fs;
 use crate::build::build_relibc;
 use crate::command::{CommandSpec, run};
 use crate::fs_utils::{ensure_dir, list_patch_files};
-use crate::misc::{mount_sysroot, with_stamp};
+use crate::install::deploy_sysroot;
+use crate::misc::with_stamp;
 use crate::types::{Action, Context, PackagePaths, Result};
 pub trait Package {
     fn name(&self) -> &'static str;
@@ -71,9 +72,6 @@ pub trait Package {
         build_relibc(ctx)?;
 
         let paths = self.calc_paths(ctx);
-
-        mount_sysroot()?;
-
         paths.ensure()?;
         with_stamp(|| self.fetch(ctx), "fetch", &paths, ctx.rebuild, true)?;
         paths.ensure()?;
@@ -91,6 +89,10 @@ pub trait Package {
     fn run(&self, ctx: &Context, action: Action) -> Result<()> {
         match action {
             Action::Install => self.make(ctx),
+            Action::Deploy => {
+                self.make(ctx)?;
+                deploy_sysroot(ctx)
+            }
             Action::Clean => self.clean(ctx),
         }
     }

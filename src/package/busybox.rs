@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 use crate::build::{CC, build_make_in};
 use crate::command::{CommandSpec, capture, make, run};
-use crate::fs_utils::remove_if_exists;
+use crate::fs_utils::{create_symlink_force, remove_if_exists};
 use crate::install::install_file;
 use crate::make_package;
 
@@ -48,13 +48,12 @@ make_package!(
             for applet in &applets {
                 install_busybox_symlink(&ctx.install_dir, applet)?;
             }
-            run(CommandSpec::new("sync"))?;
 
             let ls_link = ctx.install_dir.join("ls");
             if !busybox_bin.is_file() {
                 return Err(format!("{} was not installed", busybox_bin.display()).into());
             }
-            if capture(CommandSpec::new("test").arg("-L").arg(&ls_link)).is_err() {
+            if !std::fs::symlink_metadata(&ls_link)?.file_type().is_symlink() {
                 return Err(format!("{} is not a symlink", ls_link.display()).into());
             }
             Ok(())
@@ -152,10 +151,6 @@ fn applet_path(dir: &str, name: &str) -> crate::types::Result<PathBuf> {
 
 fn install_busybox_symlink(install_dir: &PathBuf, link_rel: &PathBuf) -> crate::types::Result<()> {
     let link = install_dir.join(link_rel);
-    run(CommandSpec::new("sudo")
-        .arg("ln")
-        .arg("-sfn")
-        .arg("busybox")
-        .arg(&link))?;
+    create_symlink_force(std::path::Path::new("busybox"), &link)?;
     Ok(())
 }

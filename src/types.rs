@@ -7,6 +7,7 @@ pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Action {
     Install,
+    Deploy,
     Clean,
 }
 
@@ -14,6 +15,7 @@ impl Action {
     pub fn from_str(value: &str) -> Option<Self> {
         match value {
             "install" => Some(Action::Install),
+            "deploy" => Some(Action::Deploy),
             "clean" => Some(Action::Clean),
             _ => None,
         }
@@ -23,6 +25,8 @@ impl Action {
 #[derive(Clone, Debug)]
 pub struct Context {
     pub packages_root: PathBuf,
+    pub staging_sysroot_dir: PathBuf,
+    pub real_sysroot_dir: PathBuf,
     pub relibc_root: PathBuf,
     pub relibc_path: PathBuf,
     pub install_dir: PathBuf,
@@ -49,11 +53,13 @@ impl Context {
             .ok_or("packages directory has no parent")?
             .to_path_buf();
         Ok(Self {
+            staging_sysroot_dir: base.join("work/sysroot-stage"),
+            real_sysroot_dir: base.join("sysroot"),
             relibc_root: base.join("relibc-seele"),
             relibc_path: base.join("relibc-seele/target/x86_64-seele/release"),
-            install_dir: base.join("sysroot/programs"),
-            system_include_dir: base.join("sysroot/misc/libs/system_include"),
-            system_lib_dir: base.join("sysroot/misc/libs/system_lib"),
+            install_dir: base.join("work/sysroot-stage/programs"),
+            system_include_dir: base.join("work/sysroot-stage/misc/libs/system_include"),
+            system_lib_dir: base.join("work/sysroot-stage/misc/libs/system_lib"),
             packages_root,
             rebuild,
             ignore_deps,

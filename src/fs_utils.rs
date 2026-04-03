@@ -1,19 +1,13 @@
 use std::ffi::OsStr;
 use std::fs;
-use std::io::ErrorKind;
+use std::os::unix::fs::symlink;
 use std::path::{Path, PathBuf};
 
-use crate::command::{CommandSpec, capture, run};
+use crate::command::{CommandSpec, run};
 use crate::types::Result;
 
 pub fn ensure_dir(path: &Path) -> Result<()> {
-    match fs::create_dir_all(path) {
-        Ok(()) => {}
-        Err(err) if err.kind() == ErrorKind::PermissionDenied => {
-            run(CommandSpec::new("sudo").arg("mkdir").arg("-p").arg(path))?;
-        }
-        Err(err) => return Err(err.into()),
-    }
+    fs::create_dir_all(path)?;
     Ok(())
 }
 
@@ -59,23 +53,47 @@ pub fn list_patch_files(dir: &Path) -> Result<Vec<PathBuf>> {
     Ok(entries)
 }
 
-pub fn copy_file_with_sudo(from: &Path, to: &Path) -> Result<()> {
+pub fn copy_file(from: &Path, to: &Path) -> Result<()> {
     let parent = to.parent().ok_or("install target has no parent")?;
     ensure_dir(parent)?;
-    run(CommandSpec::new("sudo").arg("mkdir").arg("-p").arg(parent))?;
-    run(CommandSpec::new("sudo").arg("rm").arg("-f").arg(to))?;
-    run(CommandSpec::new("sudo").arg("cp").arg(from).arg(to))?;
-    run(CommandSpec::new("sync"))?;
+    remove_path_if_exists(to)?;
+    fs::copy(from, to)?;
+    Ok(())
+}
+
+pub fn copy_dir_contents(from: &Path, to: &Path) -> Result<()> {
+    ensure_dir(to)?;
+    for entry in fs::read_dir(from)? {
+        let entry = entry?;
+        let source = entry.path();
+        let target = to.join(entry.file_name());
+        let file_type = entry.file_type()?;
+        if file_type.is_dir() {
+            copy_dir_contents(&source, &target)?;
+        } else if file_type.is_symlink() {
+            let link_target = fs::read_link(&source)?;
+            create_symlink_force(&link_target, &target)?;
+        } else {
+            copy_file(&source, &target)?;
+        }
+    }
     Ok(())
 }
 
 pub fn verify_same_size(from: &Path, to: &Path) -> Result<()> {
     let local = fs::metadata(from)?.len();
-    let installed = capture(CommandSpec::new("sudo").arg("stat").arg("-c%s").arg(to))?;
-    let installed = installed.trim().parse::<u64>()?;
+    let installed = fs::metadata(to)?.len();
     if local != installed {
         return Err(format!("size mismatch for {}", to.display()).into());
     }
+    Ok(())
+}
+
+pub fn create_symlink_force(target: &Path, link: &Path) -> Result<()> {
+    let parent = link.parent().ok_or("symlink target has no parent")?;
+    ensure_dir(parent)?;
+    remove_path_if_exists(link)?;
+    symlink(target, link)?;
     Ok(())
 }
 

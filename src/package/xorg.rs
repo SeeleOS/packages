@@ -1,6 +1,6 @@
 use crate::build::build_meson;
 use crate::configure::configure_meson;
-use crate::fs_utils::copy_file_with_sudo;
+use crate::fs_utils::copy_file;
 use crate::install::install_meson;
 use crate::layout::{APPDEFAULTDIR, BINDIR, DEFAULT_FONT_PATH, XKB_DIR, XKB_OUTPUT_DIR};
 use crate::make_autotools_packages;
@@ -12,7 +12,7 @@ use crate::misc::sysroot_dir;
 fn xorg_server_install_hook(ctx: &crate::types::Context) -> crate::types::Result<()> {
     let source = ctx.packages_root.join("xorg-server/xorg.conf");
     let target = sysroot_dir(ctx)?.join("etc/X11/xorg.conf");
-    copy_file_with_sudo(&source, &target)
+    copy_file(&source, &target)
 }
 
 make_autotools_packages!(
