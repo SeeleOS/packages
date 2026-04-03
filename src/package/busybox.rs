@@ -44,7 +44,6 @@ make_package!(
             let busybox_bin = ctx.install_dir.join("busybox");
             let applets = busybox_applets(&paths)?;
 
-            println!("[packages][busybox] installing {}...", busybox_bin.display());
             install_file(self, &source, &busybox_bin)?;
             for applet in &applets {
                 install_busybox_symlink(&ctx.install_dir, applet)?;
@@ -58,10 +57,6 @@ make_package!(
             if capture(CommandSpec::new("test").arg("-L").arg(&ls_link)).is_err() {
                 return Err(format!("{} is not a symlink", ls_link.display()).into());
             }
-            println!(
-                "[packages][busybox][OK]: busybox and {} symlink applets installed.",
-                applets.len()
-            );
             Ok(())
         }
     }

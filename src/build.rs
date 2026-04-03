@@ -2,7 +2,6 @@ use crate::{
     command::{make, run, CommandSpec},
     cross::{pkg_env, target_env},
     r#trait::Package,
-    trace::section,
     configure::with_envs,
     types::{Context, Result},
 };
@@ -11,7 +10,6 @@ use std::path::Path;
 pub const CC: &str = "clang --target=x86_64-seele";
 
 pub fn build_relibc(ctx: &Context) -> Result<()> {
-    section(format!("building relibc in {}", ctx.relibc_root.display()));
     run(make()
         .cwd(&ctx.relibc_root)
         .env_remove("CARGO")

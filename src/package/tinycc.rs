@@ -50,7 +50,6 @@ make_package!(
 fn build_tcc_tools(paths: &crate::types::PackagePaths) -> crate::types::Result<()> {
     let c2str = paths.src.join("c2str.exe");
     if !c2str.is_file() {
-        println!("Building host tool c2str.exe...");
         run(CommandSpec::new("gcc")
             .arg("-DC2STR")
             .arg("conftest.c")
@@ -60,7 +59,6 @@ fn build_tcc_tools(paths: &crate::types::PackagePaths) -> crate::types::Result<(
     }
     let tccdefs = paths.src.join("tccdefs_.h");
     if !tccdefs.is_file() {
-        println!("Generating tccdefs_.h...");
         run(CommandSpec::new("./c2str.exe")
             .arg("include/tccdefs.h")
             .arg("tccdefs_.h")

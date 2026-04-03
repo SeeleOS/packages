@@ -12,7 +12,6 @@ mod meta_pkg;
 mod misc;
 mod make_pkg;
 mod package;
-mod trace;
 mod r#trait;
 mod types;
 
@@ -29,7 +28,6 @@ use types::{Action, Context, Result};
 
 use crate::package::base::BasePackage;
 use crate::package::xorg;
-use crate::trace::{detail, section};
 
 fn usage() {
     eprintln!("Usage:");
@@ -125,19 +123,7 @@ fn run() -> Result<()> {
         process::exit(1);
     };
 
-    section(format!(
-        "starting package action: action=`{}` package=`{}` rebuild={} ignore_deps={}",
-        action_name, pkg_name, rebuild, ignore_deps
-    ));
     let ctx = Context::discover(rebuild, ignore_deps)?;
-    detail(format!(
-        "resolved context: packages_root={} install_dir={} relibc_root={} rebuild={} ignore_deps={}",
-        ctx.packages_root.display(),
-        ctx.install_dir.display(),
-        ctx.relibc_root.display(),
-        ctx.rebuild,
-        ctx.ignore_deps
-    ));
     let pkg = package_by_name(&pkg_name).ok_or_else(|| format!("unknown package: {pkg_name}"))?;
     pkg.run(&ctx, action)
 }

@@ -41,16 +41,9 @@ macro_rules! make_meta_package {
             }
 
             fn make(&self, ctx: &$crate::types::Context) -> $crate::types::Result<()> {
-                $crate::trace::package(self.name(), "starting meta-package install workflow");
                 for package in <Self as $crate::meta_pkg::MetaPackage>::packages(self) {
-                    $crate::trace::package_detail(
-                        self.name(),
-                        format!("delegating to child package `{}`", package.name()),
-                    );
                     package.make(ctx)?;
                 }
-                $crate::trace::package(self.name(), "meta-package install workflow complete");
-
                 Ok(())
             }
         }
