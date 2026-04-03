@@ -3,6 +3,7 @@ use crate::command::{CommandSpec, capture, make, run};
 use crate::fetch::TarballFetch;
 use crate::fetch_wrap;
 use crate::fs_utils::{copy_file_with_sudo, ensure_dir, verify_same_size};
+use crate::layout::{BINDIR, INCLUDEDIR, LIBDIR, PREFIX};
 use crate::r#trait::Package;
 use crate::types::{Context, Result};
 
@@ -27,10 +28,10 @@ impl Package for Ncurses {
             .env("CC", CC)
             .arg(format!("--build={}", build_triplet.trim()))
             .arg("--host=x86_64-unknown-none")
-            .arg("--prefix=/")
-            .arg("--bindir=/programs")
-            .arg("--includedir=/misc/libs/system_include")
-            .arg("--libdir=/misc/libs/system_lib")
+            .arg(format!("--prefix={PREFIX}"))
+            .arg(format!("--bindir={BINDIR}"))
+            .arg(format!("--includedir={INCLUDEDIR}"))
+            .arg(format!("--libdir={LIBDIR}"))
             .arg("--without-ada")
             .arg("--without-cxx")
             .arg("--without-cxx-binding")

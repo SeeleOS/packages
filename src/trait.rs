@@ -2,7 +2,7 @@ use std::fs;
 
 use crate::build::build_relibc;
 use crate::command::{CommandSpec, run};
-use crate::fs_utils::{ensure_dir, list_patch_files, touch};
+use crate::fs_utils::{ensure_dir, list_patch_files};
 use crate::misc::{mount_sysroot, with_stamp};
 use crate::trace::{package, package_detail, section};
 use crate::types::{Action, Context, PackagePaths, Result};
@@ -32,7 +32,6 @@ pub trait Package {
         let mut patches = list_patch_files(&paths.patches)?;
         if patches.is_empty() {
             package(self.name(), "no patches to apply");
-            touch(&paths.stamp.join("patch"))?;
             return Ok(());
         }
         package(
@@ -49,7 +48,6 @@ pub trait Package {
                 .stdin_file(&patch))?;
         }
         package(self.name(), "patch phase complete");
-        touch(&paths.stamp.join("patch"))?;
         Ok(())
     }
 
@@ -81,8 +79,10 @@ pub trait Package {
             self.name()
         ));
 
-        for dep in self.dependencies() {
-            dep.make(ctx)?;
+        if !ctx.ignore_deps {
+            for dep in self.dependencies() {
+                dep.make(ctx)?;
+            }
         }
 
         build_relibc(ctx)?;
@@ -101,28 +101,26 @@ pub trait Package {
 
         mount_sysroot()?;
 
-        package(self.name(), "phase: clean");
-        self.clean(ctx)?;
         package(self.name(), "phase: ensure workspace");
         paths.ensure()?;
         package(self.name(), "phase: fetch");
-        self.fetch(ctx)?;
+        with_stamp(|| self.fetch(ctx), "fetch", &paths, ctx.rebuild, true)?;
         package(self.name(), "phase: ensure workspace");
         paths.ensure()?;
         package(self.name(), "phase: patch");
-        self.patch(ctx)?;
+        with_stamp(|| self.patch(ctx), "patch", &paths, ctx.rebuild, false)?;
         package(self.name(), "phase: ensure workspace");
         paths.ensure()?;
         package(self.name(), "phase: configure");
-        self.configure(ctx)?;
+        with_stamp(|| self.configure(ctx), "configure", &paths, ctx.rebuild, false)?;
         package(self.name(), "phase: ensure workspace");
         paths.ensure()?;
         package(self.name(), "phase: build");
-        self.build(ctx)?;
+        with_stamp(|| self.build(ctx), "build", &paths, ctx.rebuild, false)?;
         package(self.name(), "phase: ensure workspace");
         paths.ensure()?;
         package(self.name(), "phase: install");
-        self.install(ctx)?;
+        with_stamp(|| self.install(ctx), "install", &paths, ctx.rebuild, false)?;
         package(self.name(), "install workflow complete");
 
         Ok(())

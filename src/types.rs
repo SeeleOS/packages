@@ -29,10 +29,12 @@ pub struct Context {
     pub install_dir: PathBuf,
     pub system_include_dir: PathBuf,
     pub system_lib_dir: PathBuf,
+    pub rebuild: bool,
+    pub ignore_deps: bool,
 }
 
 impl Context {
-    pub fn discover() -> Result<Self> {
+    pub fn discover(rebuild: bool, ignore_deps: bool) -> Result<Self> {
         let cwd = std::env::current_dir()?;
         detail(format!(
             "discovering package context from cwd={}",
@@ -61,6 +63,8 @@ impl Context {
             system_include_dir: base.join("sysroot/misc/libs/system_include"),
             system_lib_dir: base.join("sysroot/misc/libs/system_lib"),
             packages_root,
+            rebuild,
+            ignore_deps,
         })
     }
 }

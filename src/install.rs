@@ -1,5 +1,7 @@
 use crate::{
+    command::{run, CommandSpec},
     fs_utils::{copy_file_with_sudo, verify_same_size},
+    misc::sysroot_dir,
     trace::{package, package_detail},
     r#trait::Package,
     types::{Context, Result},
@@ -28,4 +30,29 @@ pub trait Install: Package {
         package(self.name(), "installation verified");
         Ok(())
     }
+}
+
+pub fn install_autotools(pkg: &dyn Package, ctx: &Context) -> Result<()> {
+    let paths = pkg.calc_paths(ctx);
+    let sysroot = sysroot_dir(ctx)?;
+    run(CommandSpec::new("sudo")
+        .arg("env")
+        .arg(format!("DESTDIR={}", sysroot.display()))
+        .arg("make")
+        .arg("-C")
+        .arg(&paths.src)
+        .arg("install"))
+}
+
+pub fn install_meson(pkg: &dyn Package, ctx: &Context) -> Result<()> {
+    let paths = pkg.calc_paths(ctx);
+    let sysroot = sysroot_dir(ctx)?;
+    run(CommandSpec::new("sudo")
+        .arg("env")
+        .arg(format!("DESTDIR={}", sysroot.display()))
+        .arg("meson")
+        .arg("install")
+        .arg("--no-rebuild")
+        .arg("-C")
+        .arg(&paths.build))
 }
