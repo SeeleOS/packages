@@ -2,11 +2,12 @@ use std::collections::BTreeSet;
 use std::fs;
 use std::path::PathBuf;
 
-use crate::build::CC;
+use crate::build::{CC, build_make_in};
 use crate::command::{CommandSpec, capture, make, run};
 use crate::fetch::TarballFetch;
 use crate::fetch_wrap;
-use crate::fs_utils::{copy_file_with_sudo, ensure_dir, remove_if_exists, verify_same_size};
+use crate::fs_utils::{remove_if_exists};
+use crate::install::install_file;
 use crate::r#trait::Package;
 use crate::types::{Context, PackagePaths, Result};
 
@@ -35,15 +36,16 @@ impl Package for Busybox {
     fn build(&self, ctx: &Context) -> Result<()> {
         let paths = self.calc_paths(ctx);
 
-        run(make()
-            .arg("-C")
-            .arg(&paths.src)
-            .arg(format!("O={}", paths.build.display()))
-            .arg("HOSTCC=gcc")
-            .arg(format!("CC={}", CC))
-            .arg("busybox"))?;
-
-        Ok(())
+        build_make_in(
+            &paths.src,
+            &[],
+            vec![
+                format!("O={}", paths.build.display()),
+                "HOSTCC=gcc".to_string(),
+                format!("CC={}", CC),
+                "busybox".to_string(),
+            ],
+        )
     }
 
     fn install(&self, ctx: &Context) -> Result<()> {
@@ -56,8 +58,7 @@ impl Package for Busybox {
             "[packages][busybox] installing {}...",
             busybox_bin.display()
         );
-        copy_file_with_sudo(&source, &busybox_bin)?;
-        verify_same_size(&source, &busybox_bin)?;
+        install_file(self, &source, &busybox_bin)?;
         for applet in &applets {
             install_busybox_symlink(&ctx.install_dir, applet)?;
         }

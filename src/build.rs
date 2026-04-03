@@ -3,8 +3,10 @@ use crate::{
     cross::{pkg_env, target_env},
     r#trait::Package,
     trace::section,
+    configure::with_envs,
     types::{Context, Result},
 };
+use std::path::Path;
 
 pub const CC: &str = "clang --target=x86_64-seele";
 
@@ -38,4 +40,16 @@ pub fn build_meson(pkg: &dyn Package, ctx: &Context) -> Result<()> {
             .arg(format!("-j{jobs}")),
         ctx,
     )?)
+}
+
+pub fn build_make_in(
+    cwd: &Path,
+    envs: &[(&str, &str)],
+    extra_args: Vec<String>,
+) -> Result<()> {
+    let mut cmd = with_envs(make().cwd(cwd), envs);
+    for arg in extra_args {
+        cmd = cmd.arg(arg);
+    }
+    run(cmd)
 }

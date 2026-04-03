@@ -1,7 +1,8 @@
-use crate::command::{CommandSpec, make, run};
+use crate::build::build_make_in;
+use crate::configure::configure_autotools;
 use crate::fetch::GitCloneFetch;
 use crate::fetch_wrap;
-use crate::fs_utils::{copy_file_with_sudo, verify_same_size};
+use crate::install::{install_dir_contents, install_file};
 use crate::package::ncurses::Ncurses;
 use crate::r#trait::Package;
 use crate::types::{Context, Result};
@@ -20,43 +21,41 @@ impl Package for Vim {
     fetch_wrap!(GitCloneFetch);
 
     fn configure(&self, ctx: &Context) -> Result<()> {
-        let paths = self.calc_paths(ctx);
-
-        run(CommandSpec::new("./configure")
-            .cwd(&paths.src)
-            .env("CC", "clang --target=x86_64-seele")
-            .env("LIBS", "-lncurses -ltinfo")
-            .arg("--build=x86_64-pc-linux-gnu")
-            .arg("--host=x86_64-seele")
-            .arg("--target=x86_64-seele")
-            .arg("--prefix=/")
-            .arg("--with-tlib=ncurses")
-            .arg("--with-features=normal")
-            .arg("--enable-multibyte")
-            .arg("--disable-gui")
-            .arg("--without-x")
-            .arg("--disable-acl")
-            .arg("--disable-gpm")
-            .arg("--disable-sysmouse")
-            .arg("--disable-nls")
-            .arg("--disable-netbeans")
-            .arg("--enable-channel=no")
-            .arg("--enable-terminal=no")
-            .arg("--enable-perlinterp=no")
-            .arg("--enable-pythoninterp=no")
-            .arg("--enable-python3interp=no")
-            .arg("--enable-rubyinterp=no")
-            .arg("--enable-luainterp=no")
-            .arg("--enable-mzschemeinterp=no")
-            .arg("--enable-tclinterp=no"))?;
-        Ok(())
+        configure_autotools(
+            self,
+            ctx,
+            &[("CC", "clang --target=x86_64-seele"), ("LIBS", "-lncurses -ltinfo")],
+            &[
+                "--with-tlib=ncurses",
+                "--with-features=normal",
+                "--enable-multibyte",
+                "--disable-gui",
+                "--without-x",
+                "--disable-acl",
+                "--disable-gpm",
+                "--disable-sysmouse",
+                "--disable-nls",
+                "--disable-netbeans",
+                "--enable-channel=no",
+                "--enable-terminal=no",
+                "--enable-perlinterp=no",
+                "--enable-pythoninterp=no",
+                "--enable-python3interp=no",
+                "--enable-rubyinterp=no",
+                "--enable-luainterp=no",
+                "--enable-mzschemeinterp=no",
+                "--enable-tclinterp=no",
+            ],
+            Vec::new(),
+        )
     }
 
     fn build(&self, ctx: &Context) -> Result<()> {
-        run(make()
-            .cwd(&self.calc_paths(ctx).src)
-            .env("VIMRUNTIMEDIR", "/misc/vim"))?;
-        Ok(())
+        build_make_in(
+            &self.calc_paths(ctx).src,
+            &[("VIMRUNTIMEDIR", "/misc/vim")],
+            Vec::new(),
+        )
     }
 
     fn install(&self, ctx: &Context) -> Result<()> {
@@ -70,18 +69,8 @@ impl Package for Vim {
         let runtime_source = paths.src.join("runtime");
         let runtime_target = sysroot.join("misc/vim");
 
-        copy_file_with_sudo(&source, &target)?;
-        verify_same_size(&source, &target)?;
-        run(CommandSpec::new("sudo")
-            .arg("mkdir")
-            .arg("-p")
-            .arg(&runtime_target))?;
-        run(CommandSpec::new("sudo")
-            .arg("cp")
-            .arg("-a")
-            .arg(runtime_source.join("."))
-            .arg(&runtime_target))?;
-        Ok(())
+        install_file(self, &source, &target)?;
+        install_dir_contents(self, &runtime_source, &runtime_target)
     }
 }
 

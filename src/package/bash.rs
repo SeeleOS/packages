@@ -1,8 +1,8 @@
-use crate::build::CC;
-use crate::command::{CommandSpec, make, run};
+use crate::build::{CC, build_make_in};
+use crate::configure::configure_autotools;
 use crate::fetch::TarballFetch;
 use crate::fetch_wrap;
-use crate::fs_utils::{copy_file_with_sudo, ensure_dir, verify_same_size};
+use crate::install::{Install, install_file};
 use crate::r#trait::Package;
 use crate::types::{Context, Result};
 
@@ -23,41 +23,45 @@ impl Package for Bash {
     fetch_wrap!(TarballFetch);
 
     fn configure(&self, ctx: &Context) -> Result<()> {
-        let paths = self.calc_paths(ctx);
-        ensure_dir(&paths.build)?;
-
-        run(CommandSpec::new("../configure")
-            .cwd(&paths.build)
-            .env("CC", CC)
-            .env("CC_FOR_BUILD", CC_FOR_BUILD)
-            .env("CFLAGS_FOR_BUILD", CFLAGS_FOR_BUILD)
-            .env("bash_cv_getenv_redef", BASH_CV_GETENV_REDEF)
-            .env("bash_cv_getcwd_malloc", BASH_CV_GETCWD_MALLOC)
-            .env("bash_cv_func_strchrnul_works", BASH_CV_FUNC_STRCHRNUL_WORKS)
-            .arg("--host=x86_64-unknown-none")
-            .arg("--prefix=/")
-            .arg("--disable-nls")
-            .arg("--without-bash-malloc"))?;
-        Ok(())
+        configure_autotools(
+            self,
+            ctx,
+            &[
+                ("CC", CC),
+                ("CC_FOR_BUILD", CC_FOR_BUILD),
+                ("CFLAGS_FOR_BUILD", CFLAGS_FOR_BUILD),
+                ("bash_cv_getenv_redef", BASH_CV_GETENV_REDEF),
+                ("bash_cv_getcwd_malloc", BASH_CV_GETCWD_MALLOC),
+                ("bash_cv_func_strchrnul_works", BASH_CV_FUNC_STRCHRNUL_WORKS),
+            ],
+            &["--disable-nls", "--without-bash-malloc"],
+            Vec::new(),
+        )
     }
 
     fn build(&self, ctx: &Context) -> Result<()> {
-        run(make()
-            .cwd(&self.calc_paths(ctx).build)
-            .env("CC_FOR_BUILD", CC_FOR_BUILD)
-            .env("CFLAGS_FOR_BUILD", CFLAGS_FOR_BUILD)
-            .env("ADDON_LDFLAGS", ADDON_LDFLAGS)
-            .arg("bash"))?;
-        Ok(())
+        build_make_in(
+            &self.calc_paths(ctx).src,
+            &[
+                ("CC_FOR_BUILD", CC_FOR_BUILD),
+                ("CFLAGS_FOR_BUILD", CFLAGS_FOR_BUILD),
+                ("ADDON_LDFLAGS", ADDON_LDFLAGS),
+            ],
+            vec!["bash".to_string()],
+        )
     }
 
     fn install(&self, ctx: &Context) -> Result<()> {
         let paths = self.calc_paths(ctx);
-        let source = paths.build.join("bash");
+        let source = paths.src.join("bash");
         let target = ctx.install_dir.join("bash");
-        copy_file_with_sudo(&source, &target)?;
-        verify_same_size(&source, &target)?;
-        Ok(())
+        install_file(self, &source, &target)
+    }
+}
+
+impl Install for Bash {
+    fn binary_name(&self) -> &'static str {
+        "bash"
     }
 }
 

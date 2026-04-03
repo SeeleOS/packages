@@ -9,25 +9,65 @@ use crate::libtool::fix_libtool_scripts;
 use crate::r#trait::Package;
 use crate::types::{Context, Result};
 
-pub fn configure_autotools(
-    pkg: &dyn Package,
-    ctx: &Context,
-    extra_args: &[&str],
-    extra_dynamic: Vec<String>,
-) -> Result<()> {
-    let paths = pkg.calc_paths(ctx);
-    refresh_gnu_config(ctx, &paths.src)?;
-    let mut cmd = target_env(CommandSpec::new("./configure").cwd(&paths.src), ctx)?
-        .arg(format!("--build={}", build_triplet(&paths.src)?))
-        .arg(format!("--host={TARGET_TRIPLE}"))
-        .arg(format!("--target={TARGET_TRIPLE}"))
-        .arg(format!("--prefix={PREFIX}"))
+pub fn with_envs<'a>(
+    mut spec: CommandSpec<'a>,
+    envs: &[(&'a str, &'a str)],
+) -> CommandSpec<'a> {
+    for (key, value) in envs {
+        spec = spec.env(key, *value);
+    }
+    spec
+}
+
+pub fn with_autotools_layout<'a>(spec: CommandSpec<'a>) -> CommandSpec<'a> {
+    spec.arg(format!("--prefix={PREFIX}"))
         .arg(format!("--bindir={BINDIR}"))
         .arg(format!("--sbindir={SBINDIR}"))
         .arg(format!("--includedir={INCLUDEDIR}"))
         .arg(format!("--libdir={LIBDIR}"))
         .arg(format!("--sysconfdir={SYSCONFDIR}"))
         .arg(format!("--localstatedir={LOCALSTATEDIR}"))
+}
+
+pub fn with_meson_layout<'a>(spec: CommandSpec<'a>) -> CommandSpec<'a> {
+    spec.arg(format!("--prefix={PREFIX}"))
+        .arg(format!("--bindir={}", relative_dir(BINDIR)))
+        .arg(format!("--sbindir={}", relative_dir(SBINDIR)))
+        .arg(format!("--includedir={}", relative_dir(INCLUDEDIR)))
+        .arg(format!("--libdir={}", relative_dir(LIBDIR)))
+        .arg(format!("--sysconfdir={SYSCONFDIR}"))
+        .arg(format!("--localstatedir={LOCALSTATEDIR}"))
+}
+
+pub fn configure_autotools(
+    pkg: &dyn Package,
+    ctx: &Context,
+    envs: &[(&str, &str)],
+    extra_args: &[&str],
+    extra_dynamic: Vec<String>,
+) -> Result<()> {
+    let paths = pkg.calc_paths(ctx);
+    configure_autotools_in(
+        &paths.src,
+        with_envs(CommandSpec::new("./configure").cwd(&paths.src), envs),
+        ctx,
+        extra_args,
+        extra_dynamic,
+    )
+}
+
+pub fn configure_autotools_in<'a>(
+    source_dir: &std::path::Path,
+    spec: CommandSpec<'a>,
+    ctx: &Context,
+    extra_args: &[&str],
+    extra_dynamic: Vec<String>,
+) -> Result<()> {
+    refresh_gnu_config(ctx, source_dir)?;
+    let mut cmd = with_autotools_layout(target_env(spec, ctx)?)
+        .arg(format!("--build={}", build_triplet(source_dir)?))
+        .arg(format!("--host={TARGET_TRIPLE}"))
+        .arg(format!("--target={TARGET_TRIPLE}"))
         .arg("--enable-shared")
         .arg("--disable-static");
     for arg in extra_args {
@@ -37,7 +77,7 @@ pub fn configure_autotools(
         cmd = cmd.arg(arg);
     }
     run(cmd)?;
-    fix_libtool_scripts(&paths.src)
+    fix_libtool_scripts(source_dir)
 }
 
 pub fn configure_meson(
@@ -48,17 +88,13 @@ pub fn configure_meson(
 ) -> Result<()> {
     let paths = pkg.calc_paths(ctx);
     ensure_dir(&paths.build)?;
-    let mut cmd = pkg_env(CommandSpec::new("meson").arg("setup").cwd(&paths.root), ctx)?
+    let mut cmd = with_meson_layout(pkg_env(
+        CommandSpec::new("meson").arg("setup").cwd(&paths.root),
+        ctx,
+    )?)
         .arg(&paths.build)
         .arg(&paths.src)
         .arg(format!("--cross-file={}", meson_cross_file(ctx, &paths)?.display()))
-        .arg(format!("--prefix={PREFIX}"))
-        .arg(format!("--bindir={}", relative_dir(BINDIR)))
-        .arg(format!("--sbindir={}", relative_dir(SBINDIR)))
-        .arg(format!("--includedir={}", relative_dir(INCLUDEDIR)))
-        .arg(format!("--libdir={}", relative_dir(LIBDIR)))
-        .arg(format!("--sysconfdir={SYSCONFDIR}"))
-        .arg(format!("--localstatedir={LOCALSTATEDIR}"))
         .arg("--buildtype=release")
         .arg("--wrap-mode=nodownload")
         .arg("-Ddefault_library=shared");

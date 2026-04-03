@@ -1,7 +1,7 @@
-use crate::build::{CC, build_relibc};
+use crate::build::CC;
 use crate::command::{CommandSpec, make, run};
 use crate::fetch::GitCloneFetch;
-use crate::fs_utils::{ensure_dir, remove_if_exists};
+use crate::fs_utils::remove_if_exists;
 use crate::install::Install;
 use crate::r#trait::Package;
 use crate::types::{Context, PackagePaths, Result};
