@@ -23,7 +23,7 @@ impl Package for LibX11 {
     }
     fetch_wrap!(TarballFetch);
     fn configure(&self, ctx: &Context) -> Result<()> {
-        configure_autotools(self, ctx, &[], libx11_extra_args(ctx))
+        configure_autotools(self, ctx, &[], &[], libx11_extra_args(ctx))
     }
     fn build(&self, ctx: &Context) -> Result<()> { build_autotools(self, ctx) }
     fn install(&self, ctx: &Context) -> Result<()> { install_autotools(self, ctx) }

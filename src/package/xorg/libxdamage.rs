@@ -15,7 +15,7 @@ impl Package for LibXdamage {
         vec![Box::new(XorgProto), Box::new(LibX11), Box::new(LibXfixes)]
     }
     fetch_wrap!(TarballFetch);
-    fn configure(&self, ctx: &Context) -> Result<()> { configure_autotools(self, ctx, &[], Vec::new()) }
+    fn configure(&self, ctx: &Context) -> Result<()> { configure_autotools(self, ctx, &[], &[], Vec::new()) }
     fn build(&self, ctx: &Context) -> Result<()> { build_autotools(self, ctx) }
     fn install(&self, ctx: &Context) -> Result<()> { install_autotools(self, ctx) }
 }

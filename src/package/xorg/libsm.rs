@@ -13,7 +13,7 @@ impl Package for LibSm {
     fn name(&self) -> &'static str { "libsm" }
     fn dependencies(&self) -> Vec<Box<dyn Package>> { vec![Box::new(XorgProto), Box::new(LibIce)] }
     fetch_wrap!(TarballFetch);
-    fn configure(&self, ctx: &Context) -> Result<()> { configure_autotools(self, ctx, &[], Vec::new()) }
+    fn configure(&self, ctx: &Context) -> Result<()> { configure_autotools(self, ctx, &[], &[], Vec::new()) }
     fn build(&self, ctx: &Context) -> Result<()> { build_autotools(self, ctx) }
     fn install(&self, ctx: &Context) -> Result<()> { install_autotools(self, ctx) }
 }

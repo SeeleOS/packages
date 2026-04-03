@@ -15,7 +15,7 @@ impl Package for XorgXauth {
         vec![Box::new(LibXmu), Box::new(LibXau), Box::new(LibXext), Box::new(LibX11)]
     }
     fetch_wrap!(TarballFetch);
-    fn configure(&self, ctx: &Context) -> Result<()> { configure_autotools(self, ctx, &[], Vec::new()) }
+    fn configure(&self, ctx: &Context) -> Result<()> { configure_autotools(self, ctx, &[], &[], Vec::new()) }
     fn build(&self, ctx: &Context) -> Result<()> { build_autotools(self, ctx) }
     fn install(&self, ctx: &Context) -> Result<()> { install_autotools(self, ctx) }
 }

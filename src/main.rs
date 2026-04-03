@@ -11,6 +11,7 @@ mod libtool;
 mod meta_pkg;
 mod misc;
 mod package;
+mod pkg_macro;
 mod trace;
 mod r#trait;
 mod types;
