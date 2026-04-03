@@ -22,9 +22,18 @@ pub fn build_relibc(ctx: &Context) -> Result<()> {
         .arg("all"))
 }
 
-pub fn build_autotools(pkg: &dyn Package, ctx: &Context) -> Result<()> {
+pub fn build_autotools_with(
+    pkg: &dyn Package,
+    ctx: &Context,
+    envs: &[(&str, &str)],
+    extra_args: Vec<String>,
+) -> Result<()> {
     let paths = pkg.calc_paths(ctx);
-    run(target_env(make().cwd(&paths.src), ctx)?)
+    let mut cmd = with_envs(target_env(make().cwd(&paths.src), ctx)?, envs);
+    for arg in extra_args {
+        cmd = cmd.arg(arg);
+    }
+    run(cmd)
 }
 
 pub fn build_meson(pkg: &dyn Package, ctx: &Context) -> Result<()> {

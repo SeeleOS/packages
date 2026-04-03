@@ -1,7 +1,19 @@
+use crate::layout::APPDEFAULTDIR;
 use crate::make_autotools_packages;
-use crate::package::xorg::{
-    LibX11, LibXau, LibXfixes, LibXkbfile, LibXt, XorgProto,
-};
+use crate::package::xorg::{Freetype2, LibXau, LibXfixes, LibXkbfile, XorgProto};
+
+const LIBXFONT2_ARGS: &[&str] = &["--disable-devel-docs", "--disable-selective-werror"];
+
+fn libx11_extra_args(ctx: &crate::types::Context) -> Vec<String> {
+    vec![format!(
+        "--with-keysymdefdir={}",
+        ctx.system_include_dir.join("X11").display()
+    )]
+}
+
+fn libxt_args() -> Vec<String> {
+    vec![format!("--with-appdefaultdir={APPDEFAULTDIR}")]
+}
 
 make_autotools_packages!(
     { LibFontenc, "libfontenc", tarball_url = "https://www.x.org/archive/individual/lib/libfontenc-1.1.9.tar.gz", dependencies = [XorgProto] },
@@ -12,10 +24,13 @@ make_autotools_packages!(
     { LibXdmcp, "libxdmcp", tarball_url = "https://www.x.org/archive/individual/lib/libXdmcp-1.1.5.tar.gz", dependencies = [XorgProto] },
     { LibXext, "libxext", tarball_url = "https://www.x.org/archive/individual/lib/libXext-1.3.7.tar.gz", dependencies = [XorgProto, LibX11] },
     { LibXi, "libxi", tarball_url = "https://www.x.org/archive/individual/lib/libXi-1.8.2.tar.gz", dependencies = [XorgProto, LibXext, LibXfixes] },
+    { LibX11, "libx11", tarball_url = "https://www.x.org/archive/individual/lib/libX11-1.8.13.tar.xz", dependencies = [XorgProto, LibXcb, Xtrans], configure = { dynamic_args = libx11_extra_args } },
+    { LibXfont2, "libxfont2", tarball_url = "https://www.x.org/archive/individual/lib/libXfont2-2.0.7.tar.gz", dependencies = [XorgUtilMacros, XorgProto, LibX11, Xtrans, Freetype2, LibFontenc], configure = { args = LIBXFONT2_ARGS } },
     { LibXmu, "libxmu", tarball_url = "https://www.x.org/archive/individual/lib/libXmu-1.3.1.tar.gz", dependencies = [LibXext, LibXt] },
     { LibXrandr, "libxrandr", tarball_url = "https://www.x.org/archive/individual/lib/libXrandr-1.5.5.tar.gz", dependencies = [XorgProto, LibX11, LibXrender, LibXext] },
     { LibXrender, "libxrender", tarball_url = "https://www.x.org/archive/individual/lib/libXrender-0.9.12.tar.gz", dependencies = [XorgProto, LibX11] },
     { LibXshmfence, "libxshmfence", tarball_url = "https://www.x.org/archive/individual/lib/libxshmfence-1.3.3.tar.gz", dependencies = [XorgProto] },
+    { LibXt, "libxt", tarball_url = "https://www.x.org/archive/individual/lib/libXt-1.3.1.tar.gz", dependencies = [LibX11, LibSm], configure = { dynamic_args = |_| libxt_args() } },
     { XcbProto, "xcb-proto", tarball_url = "https://www.x.org/archive/individual/proto/xcb-proto-1.17.0.tar.xz" },
     { XcbUtil, "xcb-util", tarball_url = "https://xcb.freedesktop.org/dist/xcb-util-0.4.1.tar.xz", dependencies = [LibXcb] },
     { XorgFontUtil, "xorg-font-util", tarball_url = "https://www.x.org/archive/individual/font/font-util-1.4.1.tar.xz", dependencies = [XorgUtilMacros] },

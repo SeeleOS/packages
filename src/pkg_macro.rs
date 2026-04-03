@@ -5,6 +5,8 @@ macro_rules! make_autotools_package {
         $name:literal,
         tarball_url = $tarball_url:expr
         $(, dependencies = [$($dep:path),* $(,)?])?
+        $(, configure = { $($cfg:tt)* })?
+        $(, build = { $($build:tt)* })?
         $(,)?
     ) => {
         pub struct $ty;
@@ -25,11 +27,22 @@ macro_rules! make_autotools_package {
             }
 
             fn configure(&self, ctx: &$crate::types::Context) -> $crate::types::Result<()> {
-                $crate::configure::configure_autotools(self, ctx, &[], &[], Vec::new())
+                $crate::configure::configure_autotools(
+                    self,
+                    ctx,
+                    $crate::make_autotools_package!(@cfg_env_from [ $($($cfg)*)? ]),
+                    $crate::make_autotools_package!(@cfg_args_from [ $($($cfg)*)? ]),
+                    ($crate::make_autotools_package!(@cfg_dynamic_args_from [ $($($cfg)*)? ]))(ctx),
+                )
             }
 
             fn build(&self, ctx: &$crate::types::Context) -> $crate::types::Result<()> {
-                $crate::build::build_autotools(self, ctx)
+                $crate::build::build_autotools_with(
+                    self,
+                    ctx,
+                    $crate::make_autotools_package!(@build_env_from [ $($($build)*)? ]),
+                    $crate::make_autotools_package!(@build_args_from [ $($($build)*)? ]),
+                )
             }
 
             fn install(&self, ctx: &$crate::types::Context) -> $crate::types::Result<()> {
@@ -49,6 +62,8 @@ macro_rules! make_autotools_package {
         git_url = $git_url:expr,
         git_commit = $git_commit:expr
         $(, dependencies = [$($dep:path),* $(,)?])?
+        $(, configure = { $($cfg:tt)* })?
+        $(, build = { $($build:tt)* })?
         $(,)?
     ) => {
         pub struct $ty;
@@ -69,11 +84,22 @@ macro_rules! make_autotools_package {
             }
 
             fn configure(&self, ctx: &$crate::types::Context) -> $crate::types::Result<()> {
-                $crate::configure::configure_autotools(self, ctx, &[], &[], Vec::new())
+                $crate::configure::configure_autotools(
+                    self,
+                    ctx,
+                    $crate::make_autotools_package!(@cfg_env_from [ $($($cfg)*)? ]),
+                    $crate::make_autotools_package!(@cfg_args_from [ $($($cfg)*)? ]),
+                    ($crate::make_autotools_package!(@cfg_dynamic_args_from [ $($($cfg)*)? ]))(ctx),
+                )
             }
 
             fn build(&self, ctx: &$crate::types::Context) -> $crate::types::Result<()> {
-                $crate::build::build_autotools(self, ctx)
+                $crate::build::build_autotools_with(
+                    self,
+                    ctx,
+                    $crate::make_autotools_package!(@build_env_from [ $($($build)*)? ]),
+                    $crate::make_autotools_package!(@build_args_from [ $($($build)*)? ]),
+                )
             }
 
             fn install(&self, ctx: &$crate::types::Context) -> $crate::types::Result<()> {
@@ -87,6 +113,45 @@ macro_rules! make_autotools_package {
             fn git_commit(&self) -> &'static str { $git_commit }
         }
     };
+    (@cfg_env_from [ $($items:tt)* ]) => { $crate::make_autotools_package!(@find_cfg_env [ $($items)* ]) };
+    (@find_cfg_env [ ]) => { &[] };
+    (@find_cfg_env [ env = $value:expr $(, $($rest:tt)*)? ]) => { $value };
+    (@find_cfg_env [ $key:ident = $value:expr, $($rest:tt)* ]) => {
+        $crate::make_autotools_package!(@find_cfg_env [ $($rest)* ])
+    };
+    (@find_cfg_env [ $key:ident = $value:expr ]) => { &[] };
+
+    (@cfg_args_from [ $($items:tt)* ]) => { $crate::make_autotools_package!(@find_cfg_args [ $($items)* ]) };
+    (@find_cfg_args [ ]) => { &[] };
+    (@find_cfg_args [ args = $value:expr $(, $($rest:tt)*)? ]) => { $value };
+    (@find_cfg_args [ $key:ident = $value:expr, $($rest:tt)* ]) => {
+        $crate::make_autotools_package!(@find_cfg_args [ $($rest)* ])
+    };
+    (@find_cfg_args [ $key:ident = $value:expr ]) => { &[] };
+
+    (@cfg_dynamic_args_from [ $($items:tt)* ]) => { $crate::make_autotools_package!(@find_cfg_dynamic_args [ $($items)* ]) };
+    (@find_cfg_dynamic_args [ ]) => { |_| Vec::new() };
+    (@find_cfg_dynamic_args [ dynamic_args = $value:expr $(, $($rest:tt)*)? ]) => { $value };
+    (@find_cfg_dynamic_args [ $key:ident = $value:expr, $($rest:tt)* ]) => {
+        $crate::make_autotools_package!(@find_cfg_dynamic_args [ $($rest)* ])
+    };
+    (@find_cfg_dynamic_args [ $key:ident = $value:expr ]) => { |_| Vec::new() };
+
+    (@build_env_from [ $($items:tt)* ]) => { $crate::make_autotools_package!(@find_build_env [ $($items)* ]) };
+    (@find_build_env [ ]) => { &[] };
+    (@find_build_env [ env = $value:expr $(, $($rest:tt)*)? ]) => { $value };
+    (@find_build_env [ $key:ident = $value:expr, $($rest:tt)* ]) => {
+        $crate::make_autotools_package!(@find_build_env [ $($rest)* ])
+    };
+    (@find_build_env [ $key:ident = $value:expr ]) => { &[] };
+
+    (@build_args_from [ $($items:tt)* ]) => { $crate::make_autotools_package!(@find_build_args [ $($items)* ]) };
+    (@find_build_args [ ]) => { Vec::new() };
+    (@find_build_args [ args = $value:expr $(, $($rest:tt)*)? ]) => { $value };
+    (@find_build_args [ $key:ident = $value:expr, $($rest:tt)* ]) => {
+        $crate::make_autotools_package!(@find_build_args [ $($rest)* ])
+    };
+    (@find_build_args [ $key:ident = $value:expr ]) => { Vec::new() };
 }
 
 #[macro_export]
