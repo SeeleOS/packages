@@ -24,7 +24,7 @@ pub fn build_triplet(source_dir: &Path) -> Result<String> {
 }
 
 pub fn pkg_env<'a>(spec: CommandSpec<'a>, ctx: &'a Context) -> Result<CommandSpec<'a>> {
-    let libdir = ctx.lib_dir.join("pkgconfig");
+    let libdir = ctx.lib_binary_dir.join("pkgconfig");
     Ok(spec
         .env("PKG_CONFIG_ALLOW_CROSS", "1")
         .env("PKG_CONFIG_SYSROOT_DIR", sysroot_dir(ctx)?)
@@ -54,8 +54,8 @@ pub fn target_env<'a>(spec: CommandSpec<'a>, ctx: &'a Context) -> Result<Command
             "LDFLAGS",
             format!(
                 "-L{} -Wl,-rpath-link,{}",
-                ctx.lib_dir.display(),
-                ctx.lib_dir.display()
+                ctx.lib_binary_dir.display(),
+                ctx.lib_binary_dir.display()
             ),
         ))
 }
@@ -82,7 +82,7 @@ pub fn meson_cross_file(ctx: &Context, paths: &PackagePaths) -> Result<PathBuf> 
              system = 'seele'\ncpu_family = 'x86_64'\ncpu = 'x86_64'\nendian = 'little'\n",
             root_inc = ctx.include_root_dir.display(),
             c_inc = ctx.include_c_dir.display(),
-            lib = ctx.lib_dir.display(),
+            lib = ctx.lib_binary_dir.display(),
         ),
     )?;
     Ok(cross_file)

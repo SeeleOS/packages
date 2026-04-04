@@ -1,18 +1,15 @@
-use crate::command::{run, CommandSpec};
-use crate::cross::{build_triplet, meson_cross_file, pkg_env, target_env, TARGET_TRIPLE};
+use crate::command::{CommandSpec, run};
+use crate::cross::{TARGET_TRIPLE, build_triplet, meson_cross_file, pkg_env, target_env};
 use crate::fs_utils::ensure_dir;
 use crate::gnu_config::refresh_gnu_config;
 use crate::layout::{
-    BINDIR, INCLUDEDIR, LIBDIR, LOCALSTATEDIR, PREFIX, SBINDIR, SYSCONFDIR, relative_dir,
+    BINDIR, INCLUDEDIR, LIB_BINARY_DIR, LOCALSTATEDIR, PREFIX, SBINDIR, SYSCONFDIR, relative_dir,
 };
 use crate::libtool::fix_libtool_scripts;
 use crate::r#trait::Package;
 use crate::types::{Context, Result};
 
-pub fn with_envs<'a>(
-    mut spec: CommandSpec<'a>,
-    envs: Vec<(String, String)>,
-) -> CommandSpec<'a> {
+pub fn with_envs<'a>(mut spec: CommandSpec<'a>, envs: Vec<(String, String)>) -> CommandSpec<'a> {
     for (key, value) in envs {
         spec = spec.env(key, value);
     }
@@ -24,7 +21,7 @@ pub fn with_autotools_layout<'a>(spec: CommandSpec<'a>) -> CommandSpec<'a> {
         .arg(format!("--bindir={BINDIR}"))
         .arg(format!("--sbindir={SBINDIR}"))
         .arg(format!("--includedir={INCLUDEDIR}"))
-        .arg(format!("--libdir={LIBDIR}"))
+        .arg(format!("--libdir={LIB_BINARY_DIR}"))
         .arg(format!("--sysconfdir={SYSCONFDIR}"))
         .arg(format!("--localstatedir={LOCALSTATEDIR}"))
 }
@@ -34,7 +31,7 @@ pub fn with_meson_layout<'a>(spec: CommandSpec<'a>) -> CommandSpec<'a> {
         .arg(format!("--bindir={}", relative_dir(BINDIR)))
         .arg(format!("--sbindir={}", relative_dir(SBINDIR)))
         .arg(format!("--includedir={}", relative_dir(INCLUDEDIR)))
-        .arg(format!("--libdir={}", relative_dir(LIBDIR)))
+        .arg(format!("--libdir={}", relative_dir(LIB_BINARY_DIR)))
         .arg(format!("--sysconfdir={SYSCONFDIR}"))
         .arg(format!("--localstatedir={LOCALSTATEDIR}"))
 }
@@ -92,12 +89,15 @@ pub fn configure_meson(
         CommandSpec::new("meson").arg("setup").cwd(&paths.root),
         ctx,
     )?)
-        .arg(&paths.build)
-        .arg(&paths.src)
-        .arg(format!("--cross-file={}", meson_cross_file(ctx, &paths)?.display()))
-        .arg("--buildtype=release")
-        .arg("--wrap-mode=nodownload")
-        .arg("-Ddefault_library=shared");
+    .arg(&paths.build)
+    .arg(&paths.src)
+    .arg(format!(
+        "--cross-file={}",
+        meson_cross_file(ctx, &paths)?.display()
+    ))
+    .arg("--buildtype=release")
+    .arg("--wrap-mode=nodownload")
+    .arg("-Ddefault_library=shared");
     for arg in extra_args {
         cmd = cmd.arg(arg);
     }

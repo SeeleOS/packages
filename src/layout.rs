@@ -2,7 +2,7 @@ pub const PREFIX: &str = "/";
 pub const BINDIR: &str = "/programs";
 pub const SBINDIR: &str = "/programs";
 pub const INCLUDEDIR: &str = "/libs/include";
-pub const LIBDIR: &str = "/libs/lib_binaries";
+pub const LIB_BINARY_DIR: &str = "/libs/lib_binaries";
 pub const SYSCONFDIR: &str = "/etc";
 pub const LOCALSTATEDIR: &str = "/var";
 
