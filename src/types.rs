@@ -58,7 +58,7 @@ impl Context {
             relibc_root: base.join("relibc-seele"),
             relibc_path: base.join("relibc-seele/target/x86_64-seele/release"),
             install_dir: base.join("work/sysroot-stage/programs"),
-            system_include_dir: base.join("work/sysroot-stage/libs/include"),
+            system_include_dir: base.join("work/sysroot-stage/libs/include/c"),
             system_lib_dir: base.join("work/sysroot-stage/libs/lib_binaries"),
             packages_root,
             rebuild,
