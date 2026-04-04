@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use crate::command::{capture, CommandSpec};
+use crate::command::{CommandSpec, capture};
 use crate::misc::sysroot_dir;
 use crate::types::{Context, PackagePaths, Result};
 
@@ -24,7 +24,7 @@ pub fn build_triplet(source_dir: &Path) -> Result<String> {
 }
 
 pub fn pkg_env<'a>(spec: CommandSpec<'a>, ctx: &'a Context) -> Result<CommandSpec<'a>> {
-    let libdir = ctx.lib_binary_dir.join("pkgconfig");
+    let libdir = ctx.lib_dir.join("pkgconfig");
     Ok(spec
         .env("PKG_CONFIG_ALLOW_CROSS", "1")
         .env("PKG_CONFIG_SYSROOT_DIR", sysroot_dir(ctx)?)
