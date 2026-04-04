@@ -124,8 +124,7 @@ pub trait Package {
 
     fn run(&self, ctx: &Context, action: Action) -> Result<()> {
         match action {
-            Action::Install => self.make(ctx),
-            Action::Deploy => {
+            Action::Install => {
                 self.make(ctx)?;
                 deploy_sysroot(ctx)
             }

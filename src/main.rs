@@ -26,14 +26,12 @@ use package::vim::Vim;
 use r#trait::Package;
 use types::{Action, Context, Result};
 
-use crate::misc::mount_sysroot;
 use crate::package::base::BasePackage;
 use crate::package::xorg;
 
 fn usage() {
     eprintln!("Usage:");
-    eprintln!("  cargo run install <package> [--rebuild] [--ignore-deps]");
-    eprintln!("  cargo run deploy <package> [--rebuild] [--ignore-deps]");
+    eprintln!("  cargo run install <package> [--rebuild] [--ignore-deps]   # build and install into sysroot");
     eprintln!("  cargo run clean <package> [--rebuild] [--ignore-deps]");
 }
 
@@ -89,8 +87,6 @@ fn package_by_name(name: &str) -> Option<Box<dyn Package>> {
 }
 
 fn run() -> Result<()> {
-    mount_sysroot();
-
     let mut args = env::args().skip(1);
     let Some(action_name) = args.next() else {
         usage();

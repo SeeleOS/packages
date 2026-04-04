@@ -6,7 +6,7 @@ It is closer to a small ports collection than a full package manager.
 
 ## Usage
 
-Build and install a package:
+Build and install a package into the disk image sysroot:
 
 ```sh
 cargo run install bash
