@@ -53,7 +53,7 @@ impl Context {
             .parent()
             .ok_or("packages directory has no parent")?
             .to_path_buf();
-        let staging_sysroot_dir = base.join("work/sysroot-stage");
+        let staging_sysroot_dir = packages_root.join("work/sysroot-stage");
         let include_root_dir = staging_sysroot_dir.join(relative_dir(INCLUDEDIR));
         Ok(Self {
             staging_sysroot_dir: staging_sysroot_dir.clone(),
