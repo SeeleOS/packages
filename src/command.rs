@@ -41,6 +41,18 @@ pub fn run(spec: CommandSpec<'_>) -> Result<()> {
 }
 
 pub fn capture(spec: CommandSpec<'_>) -> Result<String> {
+    let output = run_output(spec)?;
+    if !output.status.success() {
+        return Err(CommandError {
+            program: "<captured command>".to_string(),
+            code: output.status.code(),
+        }
+        .into());
+    }
+    Ok(String::from_utf8(output.stdout)?)
+}
+
+pub fn run_output(spec: CommandSpec<'_>) -> Result<std::process::Output> {
     let mut cmd = Command::new(spec.program);
     cmd.args(spec.args);
     if let Some(cwd) = spec.cwd {
@@ -52,15 +64,11 @@ pub fn capture(spec: CommandSpec<'_>) -> Result<String> {
     for key in spec.env_removes {
         cmd.env_remove(key);
     }
-    let output = cmd.output()?;
-    if !output.status.success() {
-        return Err(CommandError {
-            program: spec.program.to_string(),
-            code: output.status.code(),
-        }
-        .into());
+    if let Some(path) = spec.stdin_file {
+        let file = fs::File::open(path)?;
+        cmd.stdin(Stdio::from(file));
     }
-    Ok(String::from_utf8(output.stdout)?)
+    Ok(cmd.output()?)
 }
 
 pub struct CommandSpec<'a> {

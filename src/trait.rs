@@ -1,11 +1,51 @@
+use std::process::Output;
+
 use std::fs;
 
 use crate::build::build_relibc;
-use crate::command::{CommandSpec, run};
+use crate::command::{CommandSpec, run_output};
 use crate::fs_utils::{ensure_dir, list_patch_files};
 use crate::install::deploy_sysroot;
 use crate::misc::with_stamp;
 use crate::types::{Action, Context, PackagePaths, Result};
+
+fn patch_output_text(output: &Output) -> String {
+    let mut text = String::new();
+    text.push_str(&String::from_utf8_lossy(&output.stdout));
+    text.push_str(&String::from_utf8_lossy(&output.stderr));
+    text
+}
+
+fn patch_command<'a>(src_dir: &'a std::path::Path, patch: &'a std::path::Path) -> CommandSpec<'a> {
+    CommandSpec::new("patch")
+        .arg("-N")
+        .arg("--forward")
+        .arg("--batch")
+        .arg("-p1")
+        .cwd(src_dir)
+        .stdin_file(patch)
+}
+
+fn apply_patch_file(src_dir: &std::path::Path, patch: &std::path::Path) -> Result<()> {
+    let dry_run = run_output(patch_command(src_dir, patch).arg("--dry-run"))?;
+    if dry_run.status.success() {
+        let apply = run_output(patch_command(src_dir, patch))?;
+        if !apply.status.success() {
+            let output = patch_output_text(&apply);
+            return Err(format!("patch {} failed:\n{}", patch.display(), output).into());
+        }
+        return Ok(());
+    }
+
+    let dry_run_text = patch_output_text(&dry_run);
+    if dry_run_text.contains("Reversed (or previously applied) patch detected") {
+        eprintln!("[packages] skipping already applied patch {}", patch.display());
+        return Ok(());
+    }
+
+    Err(format!("patch {} failed:\n{}", patch.display(), dry_run_text).into())
+}
+
 pub trait Package {
     fn name(&self) -> &'static str;
 
@@ -35,11 +75,7 @@ pub trait Package {
         }
         patches.sort();
         for patch in patches {
-            run(CommandSpec::new("patch")
-                .arg("-N")
-                .arg("-p1")
-                .cwd(&paths.src)
-                .stdin_file(&patch))?;
+            apply_patch_file(&paths.src, &patch)?;
         }
         Ok(())
     }
