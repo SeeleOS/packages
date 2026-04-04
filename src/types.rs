@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use crate::fs_utils::ensure_dir;
+use crate::layout::{BINDIR, INCLUDEDIR, LIBDIR, relative_dir};
 
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
@@ -30,8 +31,9 @@ pub struct Context {
     pub relibc_root: PathBuf,
     pub relibc_path: PathBuf,
     pub install_dir: PathBuf,
-    pub system_include_dir: PathBuf,
-    pub system_lib_dir: PathBuf,
+    pub include_root_dir: PathBuf,
+    pub include_c_dir: PathBuf,
+    pub lib_dir: PathBuf,
     pub rebuild: bool,
     pub ignore_deps: bool,
 }
@@ -52,14 +54,17 @@ impl Context {
             .parent()
             .ok_or("packages directory has no parent")?
             .to_path_buf();
+        let staging_sysroot_dir = base.join("work/sysroot-stage");
+        let include_root_dir = staging_sysroot_dir.join(relative_dir(INCLUDEDIR));
         Ok(Self {
-            staging_sysroot_dir: base.join("work/sysroot-stage"),
+            staging_sysroot_dir: staging_sysroot_dir.clone(),
             real_sysroot_dir: base.join("sysroot"),
             relibc_root: base.join("relibc-seele"),
             relibc_path: base.join("relibc-seele/target/x86_64-seele/release"),
-            install_dir: base.join("work/sysroot-stage/programs"),
-            system_include_dir: base.join("work/sysroot-stage/libs/include/c"),
-            system_lib_dir: base.join("work/sysroot-stage/libs/lib_binaries"),
+            install_dir: staging_sysroot_dir.join(relative_dir(BINDIR)),
+            include_root_dir: include_root_dir.clone(),
+            include_c_dir: include_root_dir.join("c"),
+            lib_dir: staging_sysroot_dir.join(relative_dir(LIBDIR)),
             packages_root,
             rebuild,
             ignore_deps,

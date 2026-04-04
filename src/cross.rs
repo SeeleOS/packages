@@ -24,7 +24,7 @@ pub fn build_triplet(source_dir: &Path) -> Result<String> {
 }
 
 pub fn pkg_env<'a>(spec: CommandSpec<'a>, ctx: &'a Context) -> Result<CommandSpec<'a>> {
-    let libdir = ctx.system_lib_dir.join("pkgconfig");
+    let libdir = ctx.lib_dir.join("pkgconfig");
     Ok(spec
         .env("PKG_CONFIG_ALLOW_CROSS", "1")
         .env("PKG_CONFIG_SYSROOT_DIR", sysroot_dir(ctx)?)
@@ -40,15 +40,22 @@ pub fn target_env<'a>(spec: CommandSpec<'a>, ctx: &'a Context) -> Result<Command
         .env("NM", TARGET_NM)
         .env("RANLIB", "llvm-ranlib")
         .env("STRIP", "llvm-strip")
-        .env("CPPFLAGS", format!("-I{}", ctx.system_include_dir.display()))
+        .env(
+            "CPPFLAGS",
+            format!(
+                "-I{} -I{}",
+                ctx.include_root_dir.display(),
+                ctx.include_c_dir.display()
+            ),
+        )
         .env("CFLAGS", "-fPIC")
         .env("CXXFLAGS", "-fPIC")
         .env(
             "LDFLAGS",
             format!(
                 "-L{} -Wl,-rpath-link,{}",
-                ctx.system_lib_dir.display(),
-                ctx.system_lib_dir.display()
+                ctx.lib_dir.display(),
+                ctx.lib_dir.display()
             ),
         ))
 }
@@ -66,15 +73,16 @@ pub fn meson_cross_file(ctx: &Context, paths: &PackagePaths) -> Result<PathBuf> 
              strip = '{TARGET_STRIP}'\n\
              pkg-config = 'pkg-config'\n\
              \n[built-in options]\n\
-             c_args = ['-fPIC', '-I{inc}']\n\
-             cpp_args = ['-fPIC', '-I{inc}']\n\
+             c_args = ['-fPIC', '-I{root_inc}', '-I{c_inc}']\n\
+             cpp_args = ['-fPIC', '-I{root_inc}', '-I{c_inc}']\n\
              c_link_args = ['-L{lib}', '-Wl,-rpath-link,{lib}']\n\
              cpp_link_args = ['-L{lib}', '-Wl,-rpath-link,{lib}']\n\
              \n[properties]\nneeds_exe_wrapper = true\n\
              \n[host_machine]\n\
              system = 'seele'\ncpu_family = 'x86_64'\ncpu = 'x86_64'\nendian = 'little'\n",
-            inc = ctx.system_include_dir.display(),
-            lib = ctx.system_lib_dir.display(),
+            root_inc = ctx.include_root_dir.display(),
+            c_inc = ctx.include_c_dir.display(),
+            lib = ctx.lib_dir.display(),
         ),
     )?;
     Ok(cross_file)
