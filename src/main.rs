@@ -8,9 +8,9 @@ mod gnu_config;
 mod install;
 mod layout;
 mod libtool;
+mod make_pkg;
 mod meta_pkg;
 mod misc;
-mod make_pkg;
 mod package;
 mod r#trait;
 mod types;
@@ -26,6 +26,7 @@ use package::vim::Vim;
 use r#trait::Package;
 use types::{Action, Context, Result};
 
+use crate::misc::mount_sysroot;
 use crate::package::base::BasePackage;
 use crate::package::xorg;
 
@@ -88,6 +89,8 @@ fn package_by_name(name: &str) -> Option<Box<dyn Package>> {
 }
 
 fn run() -> Result<()> {
+    mount_sysroot();
+
     let mut args = env::args().skip(1);
     let Some(action_name) = args.next() else {
         usage();
