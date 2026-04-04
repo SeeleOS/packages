@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use crate::fs_utils::ensure_dir;
-use crate::layout::{BINDIR, INCLUDEDIR, LIBDIR, relative_dir};
+use crate::layout::{BINDIR, INCLUDEDIR, LIB_BINARY_DIR, LIBDIR, relative_dir};
 
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
@@ -34,6 +34,7 @@ pub struct Context {
     pub include_root_dir: PathBuf,
     pub include_c_dir: PathBuf,
     pub lib_binary_dir: PathBuf,
+    pub lib_dir: PathBuf,
     pub rebuild: bool,
     pub ignore_deps: bool,
 }
@@ -64,7 +65,8 @@ impl Context {
             install_dir: staging_sysroot_dir.join(relative_dir(BINDIR)),
             include_root_dir: include_root_dir.clone(),
             include_c_dir: include_root_dir.join("c"),
-            lib_binary_dir: staging_sysroot_dir.join(relative_dir(LIBDIR)),
+            lib_binary_dir: staging_sysroot_dir.join(relative_dir(LIB_BINARY_DIR)),
+            lib_dir: staging_sysroot_dir.join(relative_dir(LIBDIR)),
             packages_root,
             rebuild,
             ignore_deps,

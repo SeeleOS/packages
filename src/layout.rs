@@ -1,4 +1,5 @@
 pub const PREFIX: &str = "/";
+pub const LIBDIR: &str = "/libs";
 pub const BINDIR: &str = "/programs";
 pub const SBINDIR: &str = "/programs";
 pub const INCLUDEDIR: &str = "/libs/include";
