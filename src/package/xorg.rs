@@ -47,7 +47,7 @@ make_autotools_packages!(
 make_meson_packages!(
     { Freetype2, "freetype2", git_url = "https://gitlab.freedesktop.org/freetype/freetype.git", git_commit = "0a0221a1347e2f1e07c395263540026e9a0aa7c7", configure = { args = vec!["-Dbrotli=disabled".to_string(), "-Dbzip2=disabled".to_string(), "-Dharfbuzz=disabled".to_string(), "-Dpng=disabled".to_string(), "-Dzlib=disabled".to_string()] } },
     { Pixman, "pixman", git_url = "https://gitlab.freedesktop.org/pixman/pixman.git", git_commit = "9cc163c9da0fb4da430641715313d95a6ec466d9", configure = { args = vec!["-Dgtk=disabled".to_string(), "-Dlibpng=disabled".to_string(), "-Dtests=disabled".to_string()] } },
-    { LibXau, "libxau", tarball_url = "https://www.x.org/archive/individual/lib/libXau-1.0.12.tar.gz", dependencies = [XorgProto] },
+    { LibXau, "libxau", tarball_url = "https://www.x.org/archive/individual/lib/libXau-1.0.12.tar.gz", dependencies = [XorgProto], configure = { args = vec!["-Dxthreads=false".to_string()] } },
     { LibXfixes, "libxfixes", git_url = "https://gitlab.freedesktop.org/xorg/lib/libxfixes.git", git_commit = "70d5b0e37f8a759f3dbc218f22954347ceed094a", dependencies = [XorgProto, LibX11] },
     { LibXinerama, "libxinerama", tarball_url = "https://www.x.org/archive/individual/lib/libXinerama-1.1.6.tar.gz", dependencies = [LibX11, LibXext, XorgUtilMacros, XorgProto] },
     { LibXkbfile, "libxkbfile", tarball_url = "https://www.x.org/archive/individual/lib/libxkbfile-1.2.0.tar.xz", dependencies = [XorgUtilMacros, XorgProto, LibX11] },
