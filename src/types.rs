@@ -58,8 +58,8 @@ impl Context {
         Ok(Self {
             staging_sysroot_dir: staging_sysroot_dir.clone(),
             real_sysroot_dir: base.join("sysroot"),
-            relibc_root: base.join("relibc-seele"),
-            relibc_path: base.join("relibc-seele/target/x86_64-seele/release"),
+            relibc_root: base.join("relibc"),
+            relibc_path: base.join("relibc/target/x86_64-seele/release"),
             install_dir: staging_sysroot_dir.join(relative_dir(BINDIR)),
             include_root_dir: include_root_dir.clone(),
             include_c_dir: include_root_dir.join("c"),
