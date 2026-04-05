@@ -72,6 +72,28 @@ pub fn install_meson(pkg: &dyn Package, ctx: &Context) -> Result<()> {
         .arg(&paths.build))
 }
 
+pub fn install_cargo(pkg: &dyn Package, ctx: &Context, bins: Vec<String>, profile: &str) -> Result<()> {
+    let paths = pkg.calc_paths(ctx);
+    let bins = if bins.is_empty() {
+        vec![pkg.install_name().to_string()]
+    } else {
+        bins
+    };
+
+    for bin in bins {
+        let source = paths
+            .build
+            .join("target")
+            .join(crate::cross::TARGET_TRIPLE)
+            .join(profile)
+            .join(&bin);
+        let target = ctx.install_dir.join(&bin);
+        install_file(pkg, &source, &target)?;
+    }
+
+    Ok(())
+}
+
 pub fn deploy_sysroot(ctx: &Context) -> Result<()> {
     let staging = sysroot_dir(ctx)?;
     let deployed = deployed_sysroot_dir(ctx)?;

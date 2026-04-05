@@ -60,3 +60,37 @@ pub fn build_make_in(
     }
     run(cmd)
 }
+
+pub fn build_cargo(pkg: &dyn Package, ctx: &Context) -> Result<()> {
+    build_cargo_with(pkg, ctx, Vec::new(), Vec::new())
+}
+
+pub fn build_cargo_with(
+    pkg: &dyn Package,
+    ctx: &Context,
+    envs: Vec<(String, String)>,
+    extra_args: Vec<String>,
+) -> Result<()> {
+    let paths = pkg.calc_paths(ctx);
+    let mut cmd = with_envs(
+        target_env(
+            CommandSpec::new("cargo")
+                .cwd(&paths.src)
+                .arg("+seele")
+                .arg("build")
+                .arg("--target")
+                .arg(crate::cross::TARGET_TRIPLE)
+                .arg("--target-dir")
+                .arg(paths.build.join("target")),
+            ctx,
+        )?,
+        envs,
+    )
+    .env("CARGO_TARGET_X86_64_SEELE_LINKER", "clang");
+
+    for arg in extra_args {
+        cmd = cmd.arg(arg);
+    }
+
+    run(cmd)
+}

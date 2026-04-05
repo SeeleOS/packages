@@ -224,3 +224,76 @@ macro_rules! make_meson_packages {
         )*
     };
 }
+
+#[macro_export]
+macro_rules! make_cargo_package {
+    (
+        $ty:ident,
+        $name:literal,
+        $fetch_key:ident = $fetch_value:expr
+        $(, git_commit = $git_commit:expr)?
+        $(, dependencies = [$($dep:path),* $(,)?])?
+        $(, build = { $($build:tt)* })?
+        $(, install = { $($install:tt)* })?
+        $(,)?
+    ) => {
+        $crate::make_package!(
+            $ty,
+            $name,
+            $fetch_key = $fetch_value
+            $(, git_commit = $git_commit)?
+            $(, dependencies = [$($dep),*])?,
+            package_impl = {
+                fn configure(&self, _ctx: &$crate::types::Context) -> $crate::types::Result<()> {
+                    Ok(())
+                }
+
+                fn build(&self, ctx: &$crate::types::Context) -> $crate::types::Result<()> {
+                    $crate::build::build_cargo_with(
+                        self,
+                        ctx,
+                        $crate::make_cargo_package!(@build_env_from [ $($($build)*)? ]),
+                        $crate::make_cargo_package!(@build_args_from [ $($($build)*)? ]),
+                    )
+                }
+
+                fn install(&self, ctx: &$crate::types::Context) -> $crate::types::Result<()> {
+                    $crate::install::install_cargo(
+                        self,
+                        ctx,
+                        $crate::make_cargo_package!(@install_bins_from [ $($($install)*)? ]),
+                        $crate::make_cargo_package!(@install_profile_from [ $($($install)*)? ]),
+                    )
+                }
+            }
+        );
+    };
+    (@build_env_from [ $($items:tt)* ]) => { $crate::make_cargo_package!(@find_build_env [ $($items)* ]) };
+    (@find_build_env [ ]) => { Vec::<(String, String)>::new() };
+    (@find_build_env [ env = $value:expr $(, $($rest:tt)*)? ]) => { $value };
+    (@find_build_env [ $key:ident = $value:expr, $($rest:tt)* ]) => {
+        $crate::make_cargo_package!(@find_build_env [ $($rest)* ])
+    };
+    (@find_build_env [ $key:ident = $value:expr ]) => { Vec::<(String, String)>::new() };
+    (@build_args_from [ $($items:tt)* ]) => { $crate::make_cargo_package!(@find_build_args [ $($items)* ]) };
+    (@find_build_args [ ]) => { Vec::<String>::new() };
+    (@find_build_args [ args = $value:expr $(, $($rest:tt)*)? ]) => { $value };
+    (@find_build_args [ $key:ident = $value:expr, $($rest:tt)* ]) => {
+        $crate::make_cargo_package!(@find_build_args [ $($rest)* ])
+    };
+    (@find_build_args [ $key:ident = $value:expr ]) => { Vec::<String>::new() };
+    (@install_bins_from [ $($items:tt)* ]) => { $crate::make_cargo_package!(@find_install_bins [ $($items)* ]) };
+    (@find_install_bins [ ]) => { Vec::<String>::new() };
+    (@find_install_bins [ bins = $value:expr $(, $($rest:tt)*)? ]) => { $value };
+    (@find_install_bins [ $key:ident = $value:expr, $($rest:tt)* ]) => {
+        $crate::make_cargo_package!(@find_install_bins [ $($rest)* ])
+    };
+    (@find_install_bins [ $key:ident = $value:expr ]) => { Vec::<String>::new() };
+    (@install_profile_from [ $($items:tt)* ]) => { $crate::make_cargo_package!(@find_install_profile [ $($items)* ]) };
+    (@find_install_profile [ ]) => { "debug" };
+    (@find_install_profile [ profile = $value:expr $(, $($rest:tt)*)? ]) => { $value };
+    (@find_install_profile [ $key:ident = $value:expr, $($rest:tt)* ]) => {
+        $crate::make_cargo_package!(@find_install_profile [ $($rest)* ])
+    };
+    (@find_install_profile [ $key:ident = $value:expr ]) => { "debug" };
+}
