@@ -16,7 +16,8 @@ fn xorg_server_install_hook(ctx: &crate::types::Context) -> crate::types::Result
 }
 
 make_autotools_packages!(
-    { LibFontenc, "libfontenc", tarball_url = "https://www.x.org/archive/individual/lib/libfontenc-1.1.9.tar.gz", dependencies = [XorgProto] },
+    { Zlib, "zlib", tarball_url = "https://zlib.net/fossils/zlib-1.3.1.tar.gz", configure = { args = vec!["--shared".to_string()] } },
+    { LibFontenc, "libfontenc", tarball_url = "https://www.x.org/archive/individual/lib/libfontenc-1.1.9.tar.gz", dependencies = [XorgProto, Zlib] },
     { LibIce, "libice", tarball_url = "https://www.x.org/archive/individual/lib/libICE-1.1.2.tar.gz", dependencies = [XorgProto, Xtrans] },
     { LibSm, "libsm", tarball_url = "https://www.x.org/archive/individual/lib/libSM-1.2.6.tar.gz", dependencies = [XorgProto, LibIce], configure = { args = vec!["--without-libuuid".to_string()] } },
     { LibXcb, "libxcb", tarball_url = "https://www.x.org/archive/individual/lib/libxcb-1.17.0.tar.xz", dependencies = [XorgProto, LibXau, LibXdmcp, XcbProto] },
