@@ -24,9 +24,15 @@ pub fn build_triplet(source_dir: &Path) -> Result<String> {
 }
 
 pub fn pkg_env<'a>(spec: CommandSpec<'a>, ctx: &'a Context) -> Result<CommandSpec<'a>> {
-    let libdir = ctx.lib_dir.join("pkgconfig");
+    let compat_libdir = ctx.staging_sysroot_dir.join("libs").join("pkgconfig");
+    let libdir = ctx.lib_binary_dir.join("pkgconfig");
     let sharedir = ctx.staging_sysroot_dir.join("share").join("pkgconfig");
-    let pkg_config_path = format!("{}:{}", libdir.display(), sharedir.display());
+    let pkg_config_path = format!(
+        "{}:{}:{}",
+        compat_libdir.display(),
+        libdir.display(),
+        sharedir.display()
+    );
     Ok(spec
         .env("PKG_CONFIG_ALLOW_CROSS", "1")
         .env("PKG_CONFIG_SYSROOT_DIR", sysroot_dir(ctx)?)
