@@ -1,0 +1,25 @@
+--- a/include/X11/Xos_r.h
++++ b/include/X11/Xos_r.h
+@@ -323,12 +323,22 @@
+ typedef struct {
+   struct passwd pws;
+   char pwbuf[X_LINE_MAX];
++#if defined(__seele__)
++  struct passwd* pwp;
++#endif
+ } _Xgetpwparams;
+ # if defined(_POSIX_REENTRANT_FUNCTIONS) || !defined(SVR4)
++#  if defined(__seele__)
++#   define _XGetpwuid(u,p) \
++((getpwuid_r((u),&(p).pws,(p).pwbuf,sizeof((p).pwbuf),&(p).pwp) != 0 || (p).pwp == NULL) ? NULL : &(p).pws)
++#   define _XGetpwnam(u,p) \
++((getpwnam_r((u),&(p).pws,(p).pwbuf,sizeof((p).pwbuf),&(p).pwp) != 0 || (p).pwp == NULL) ? NULL : &(p).pws)
++#  else
+ #   define _XGetpwuid(u,p) \
+ ((getpwuid_r((u),&(p).pws,(p).pwbuf,sizeof((p).pwbuf)) == -1) ? NULL : &(p).pws)
+ #   define _XGetpwnam(u,p) \
+ ((getpwnam_r((u),&(p).pws,(p).pwbuf,sizeof((p).pwbuf)) == -1) ? NULL : &(p).pws)
++#  endif
+ # else /* SVR4 */
+ #  define _XGetpwuid(u,p) \
+ ((getpwuid_r((u),&(p).pws,(p).pwbuf,sizeof((p).pwbuf)) == NULL) ? NULL : &(p).pws)
