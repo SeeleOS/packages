@@ -40,6 +40,8 @@ pub fn fix_libtool_scripts(root: &Path) -> Result<()> {
         set_shell_var(&mut content, "version_type", "linux");
         set_shell_var(&mut content, "need_lib_prefix", "no");
         set_shell_var(&mut content, "need_version", "no");
+        set_shell_var(&mut content, "deplibs_check_method", "\"pass_all\"");
+        set_shell_var(&mut content, "link_all_deplibs", "yes");
         set_shell_var(&mut content, "library_names_spec", "'${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}$major ${libname}${shared_ext}'");
         set_shell_var(&mut content, "soname_spec", "'${libname}${release}${shared_ext}$major'");
         set_shell_var(&mut content, "dynamic_linker", "'Seele ld.so'");
