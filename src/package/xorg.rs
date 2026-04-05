@@ -1,6 +1,6 @@
 use crate::build::{build_autotools_with, build_meson};
 use crate::command::{run, CommandSpec};
-use crate::configure::configure_meson;
+use crate::configure::{configure_autotools, configure_meson};
 use crate::cross::{target_env, TARGET_TRIPLE};
 use crate::fs_utils::copy_file;
 use crate::install::{install_autotools, install_meson};
@@ -43,13 +43,53 @@ make_autotools_packages!(
     { XorgUtilMacros, "xorg-util-macros", tarball_url = "https://www.x.org/archive/individual/util/util-macros-1.20.2.tar.gz" },
     { Xf86InputKeyboard, "xf86-input-keyboard", tarball_url = "https://www.x.org/archive/individual/driver/xf86-input-keyboard-1.9.0.tar.gz", dependencies = [XorgServer] },
     { Xf86InputMouse, "xf86-input-mouse", tarball_url = "https://www.x.org/archive/individual/driver/xf86-input-mouse-1.9.3.tar.gz", dependencies = [XorgServer] },
-    { Xf86VideoFbdev, "xf86-video-fbdev", tarball_url = "https://www.x.org/archive/individual/driver/xf86-video-fbdev-0.5.1.tar.gz", dependencies = [XorgServer] },
     { XorgXauth, "xorg-xauth", tarball_url = "https://www.x.org/releases/individual/app/xauth-1.1.5.tar.xz", dependencies = [LibXmu, LibXau, LibXext, LibX11] },
     { XorgXinit, "xorg-xinit", tarball_url = "https://www.x.org/releases/individual/app/xinit-1.4.4.tar.xz", dependencies = [LibX11, XorgXauth, XorgXmodmap, XorgXrdb] },
     { XorgXkbcomp, "xorg-xkbcomp", tarball_url = "https://www.x.org/archive/individual/app/xkbcomp-1.5.0.tar.gz", dependencies = [LibXkbfile, LibX11] },
     { XorgXmodmap, "xorg-xmodmap", tarball_url = "https://www.x.org/releases/individual/app/xmodmap-1.0.11.tar.xz", dependencies = [LibX11] },
     { XorgXrdb, "xorg-xrdb", tarball_url = "https://www.x.org/releases/individual/app/xrdb-1.2.2.tar.xz", dependencies = [LibX11, LibXmu] },
     { Xtrans, "xtrans", tarball_url = "https://www.x.org/archive/individual/lib/xtrans-1.6.0.tar.gz", dependencies = [XorgUtilMacros] },
+);
+
+make_package!(
+    Xf86VideoFbdev,
+    "xf86-video-fbdev",
+    tarball_url = "https://www.x.org/archive/individual/driver/xf86-video-fbdev-0.5.1.tar.gz",
+    dependencies = [XorgServer, Pixman],
+    package_impl = {
+        fn configure(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
+            let pixman_include = ctx.include_root_dir.join("pixman-1");
+            let pixman_flags = format!("-I{}", pixman_include.display());
+            configure_autotools(
+                self,
+                ctx,
+                vec![
+                    ("CPPFLAGS".to_string(), pixman_flags.clone()),
+                    ("CFLAGS".to_string(), pixman_flags),
+                ],
+                Vec::new(),
+                Vec::new(),
+            )
+        }
+
+        fn build(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
+            let pixman_include = ctx.include_root_dir.join("pixman-1");
+            let pixman_flags = format!("-I{}", pixman_include.display());
+            build_autotools_with(
+                self,
+                ctx,
+                vec![
+                    ("CPPFLAGS".to_string(), pixman_flags.clone()),
+                    ("CFLAGS".to_string(), pixman_flags),
+                ],
+                Vec::new(),
+            )
+        }
+
+        fn install(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
+            install_autotools(self, ctx)
+        }
+    }
 );
 
 make_package!(
@@ -113,7 +153,7 @@ make_package!(
                 ctx,
                 vec![
                     "-Dxorg=true".to_string(),
-                    "-Dxv=false".to_string(),
+                    "-Dxv=true".to_string(),
                     "-Dxvfb=false".to_string(),
                     "-Dxephyr=false".to_string(),
                     "-Dxnest=false".to_string(),

@@ -48,23 +48,25 @@ pub fn target_env<'a>(spec: CommandSpec<'a>, ctx: &'a Context) -> Result<Command
         .env("NM", TARGET_NM)
         .env("RANLIB", "llvm-ranlib")
         .env("STRIP", "llvm-strip")
-        .env(
+        .env_append(
             "CPPFLAGS",
             format!(
                 "-I{} -I{}",
                 ctx.include_root_dir.display(),
                 ctx.include_c_dir.display()
             ),
+            " ",
         )
-        .env("CFLAGS", "-fPIC")
-        .env("CXXFLAGS", "-fPIC")
-        .env(
+        .env_append("CFLAGS", "-fPIC", " ")
+        .env_append("CXXFLAGS", "-fPIC", " ")
+        .env_append(
             "LDFLAGS",
             format!(
                 "-L{} -Wl,-rpath-link,{}",
                 ctx.lib_binary_dir.display(),
                 ctx.lib_binary_dir.display()
             ),
+            " ",
         ))
 }
 

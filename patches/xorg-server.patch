@@ -226,6 +226,16 @@ index 7d554e60a..ef3e28072 100644
  {
      xf86Msg(X_ERROR, "fbdevhw is not available on this platform\n");
      return FALSE;
+diff --git a/hw/xfree86/fbdevhw/meson.build b/hw/xfree86/fbdevhw/meson.build
+index f3146f3c9..866735a49 100644
+--- a/hw/xfree86/fbdevhw/meson.build
++++ b/hw/xfree86/fbdevhw/meson.build
+@@ -1,4 +1,4 @@
+-if host_machine.system() == 'linux'
++if ['linux', 'seele'].contains(host_machine.system())
+     srcs_fbdevhw = 'fbdevhw.c'
+ else
+     srcs_fbdevhw = 'fbdevhwstub.c'
 diff --git a/hw/xfree86/os-support/shared/posix_tty.c b/hw/xfree86/os-support/shared/posix_tty.c
 index 0cb9788cc..e8cac5d39 100644
 --- a/hw/xfree86/os-support/shared/posix_tty.c

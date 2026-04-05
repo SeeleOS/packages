@@ -1,0 +1,93 @@
+--- a/src/fbdev.c
++++ b/src/fbdev.c
+@@ -308,10 +308,7 @@ static Bool
+ 	ScrnInfoPtr pScrn;
+        	GDevPtr *devSections;
+ 	int numDevSections;
+-#ifndef XSERVER_LIBPCIACCESS
+-	int bus,device,func;
+-#endif
+-	char *dev;
++	const char *dev;
+ 	Bool foundScreen = FALSE;
+ 
+ 	TRACE("probe start");
+@@ -327,47 +324,15 @@ static Bool
+ 	    return FALSE;
+ 	    
+ 	for (i = 0; i < numDevSections; i++) {
+-	    Bool isPci = FALSE;
+-
+ 	    dev = xf86FindOptionValue(devSections[i]->options,"fbdev");
+-	    if (devSections[i]->busID) {
+-#ifndef XSERVER_LIBPCIACCESS
+-	        if (xf86ParsePciBusString(devSections[i]->busID,&bus,&device,
+-					  &func)) {
+-		    if (!xf86CheckPciSlot(bus,device,func))
+-		        continue;
+-		    isPci = TRUE;
+-		}
+-#endif
+-	    }
+-	    if (fbdevHWProbe(NULL,dev,NULL)) {
++	    if (fbdevHWProbe(NULL, (char *) dev, NULL)) {
+ 		pScrn = NULL;
+-		if (isPci) {
+-#ifndef XSERVER_LIBPCIACCESS
+-		    /* XXX what about when there's no busID set? */
++		{
+ 		    int entity;
+-		    
+-		    entity = xf86ClaimPciSlot(bus,device,func,drv,
+-					      0,devSections[i],
+-					      TRUE);
+-		    pScrn = xf86ConfigPciEntity(pScrn,0,entity,
+-						      NULL,RES_SHARED_VGA,
+-						      NULL,NULL,NULL,NULL);
+-		    /* xf86DrvMsg() can't be called without setting these */
+-		    pScrn->driverName    = FBDEV_DRIVER_NAME;
+-		    pScrn->name          = FBDEV_NAME;
+-		    xf86DrvMsg(pScrn->scrnIndex, X_CONFIG,
+-			       "claimed PCI slot %d:%d:%d\n",bus,device,func);
+-
+-#endif
+-		} else {
+-		   int entity;
+ 
+-		    entity = xf86ClaimFbSlot(drv, 0,
+-					      devSections[i], TRUE);
+-		    pScrn = xf86ConfigFbEntity(pScrn,0,entity,
+-					       NULL,NULL,NULL,NULL);
+-		   
++		    entity = xf86ClaimFbSlot(drv, 0, devSections[i], TRUE);
++		    pScrn = xf86ConfigFbEntity(pScrn, 0, entity,
++					       NULL, NULL, NULL, NULL);
+ 		}
+ 		if (pScrn) {
+ 		    foundScreen = TRUE;
+@@ -418,23 +383,12 @@ static Bool
+ 
+ 	fPtr->pEnt = xf86GetEntityInfo(pScrn->entityList[0]);
+ 
+-#ifndef XSERVER_LIBPCIACCESS
+-	pScrn->racMemFlags = RAC_FB | RAC_COLORMAP | RAC_CURSOR | RAC_VIEWPORT;
+-	/* XXX Is this right?  Can probably remove RAC_FB */
+-	pScrn->racIoFlags = RAC_FB | RAC_COLORMAP | RAC_CURSOR | RAC_VIEWPORT;
+-
+-	if (fPtr->pEnt->location.type == BUS_PCI &&
+-	    xf86RegisterResources(fPtr->pEnt->index,NULL,ResExclusive)) {
+-		xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+-		   "xf86RegisterResources() found resource conflicts\n");
+-		return FALSE;
+-	}
+-#else
++#ifdef XSERVER_LIBPCIACCESS
+ 	if (fPtr->pEnt->location.type == BUS_PCI)
+ 	    pci_dev = fPtr->pEnt->location.id.pci;
+ #endif
+ 	/* open device */
+-	if (!fbdevHWInit(pScrn, pci_dev,
++	if (!fbdevHWInit(pScrn, pci_dev, (char *)
+ 			 xf86FindOptionValue(fPtr->pEnt->device->options,
+ 					     "fbdev")))
+ 		return FALSE;
