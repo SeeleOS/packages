@@ -1,5 +1,5 @@
 diff --git a/hw/xfree86/common/xf86Bus.c b/hw/xfree86/common/xf86Bus.c
-index fd144db..6eb018c 100644
+index fd144dbe7..6eb018ce4 100644
 --- a/hw/xfree86/common/xf86Bus.c
 +++ b/hw/xfree86/common/xf86Bus.c
 @@ -556,6 +556,7 @@ xf86GetDevFromEntity(int entityIndex, int instance)
@@ -19,7 +19,7 @@ index fd144db..6eb018c 100644
  
  Bool
 diff --git a/hw/xfree86/common/xf86Config.c b/hw/xfree86/common/xf86Config.c
-index 8d8ebf1..87c2449 100644
+index 8d8ebf1b5..87c244946 100644
 --- a/hw/xfree86/common/xf86Config.c
 +++ b/hw/xfree86/common/xf86Config.c
 @@ -49,6 +49,8 @@
@@ -32,7 +32,7 @@ index 8d8ebf1..87c2449 100644
  #include "xf86Modes.h"
  #include "xf86Parser.h"
 diff --git a/hw/xfree86/common/xf86Configure.c b/hw/xfree86/common/xf86Configure.c
-index 2b4105f..e6fbed9 100644
+index 2b4105f2b..e6fbed9b3 100644
 --- a/hw/xfree86/common/xf86Configure.c
 +++ b/hw/xfree86/common/xf86Configure.c
 @@ -27,6 +27,8 @@
@@ -45,9 +45,9 @@ index 2b4105f..e6fbed9 100644
  #include "xf86Config.h"
  #include "xf86_OSlib.h"
 diff --git a/hw/xfree86/common/xf86Events.c b/hw/xfree86/common/xf86Events.c
-index 395bbc7..4bf86cb 100644
---- a/hw/xfree86/common/xfree86/common/xf86Events.c
-+++ b/hw/xfree86/common/xfree86/common/xf86Events.c
+index 395bbc7b3..4bf86cb25 100644
+--- a/hw/xfree86/common/xf86Events.c
++++ b/hw/xfree86/common/xf86Events.c
 @@ -53,6 +53,8 @@
  #include <xorg-config.h>
  #endif
@@ -58,7 +58,7 @@ index 395bbc7..4bf86cb 100644
  #include <X11/Xproto.h>
  #include <X11/Xatom.h>
 diff --git a/hw/xfree86/common/xf86Helper.c b/hw/xfree86/common/xf86Helper.c
-index 98dc372..9ddcbdb 100644
+index 98dc3722a..9ddcbdbb8 100644
 --- a/hw/xfree86/common/xf86Helper.c
 +++ b/hw/xfree86/common/xf86Helper.c
 @@ -38,6 +38,8 @@
@@ -71,7 +71,7 @@ index 98dc372..9ddcbdb 100644
  #include "mi.h"
  #include "os.h"
 diff --git a/hw/xfree86/common/xf86Init.c b/hw/xfree86/common/xf86Init.c
-index 5695e71..96c2d15 100644
+index 5695e71ac..96c2d151f 100644
 --- a/hw/xfree86/common/xf86Init.c
 +++ b/hw/xfree86/common/xf86Init.c
 @@ -37,6 +37,8 @@
@@ -84,7 +84,7 @@ index 5695e71..96c2d15 100644
  #if !defined(WIN32)
  #define HAS_UTSNAME 1
 diff --git a/hw/xfree86/fbdevhw/fbdevhw.c b/hw/xfree86/fbdevhw/fbdevhw.c
-index 9c30f00..f259d93 100644
+index 9c30f00cc..17dfafc0e 100644
 --- a/hw/xfree86/fbdevhw/fbdevhw.c
 +++ b/hw/xfree86/fbdevhw/fbdevhw.c
 @@ -10,12 +10,12 @@
@@ -191,7 +191,7 @@ index 9c30f00..f259d93 100644
          default:
              fPtr->unsupported_ioctls |= (1 << FBIOBLANK_UNSUPPORTED);
 diff --git a/hw/xfree86/fbdevhw/fbdevhw.h b/hw/xfree86/fbdevhw/fbdevhw.h
-index 4984ccf..bb3e2f8 100644
+index 4984ccf89..bb3e2f817 100644
 --- a/hw/xfree86/fbdevhw/fbdevhw.h
 +++ b/hw/xfree86/fbdevhw/fbdevhw.h
 @@ -16,9 +16,9 @@ extern _X_EXPORT void fbdevHWFreeRec(ScrnInfoPtr pScrn);
@@ -206,8 +206,28 @@ index 4984ccf..bb3e2f8 100644
                                    char *device);
  
  extern _X_EXPORT char *fbdevHWGetName(ScrnInfoPtr pScrn);
+diff --git a/hw/xfree86/fbdevhw/fbdevhwstub.c b/hw/xfree86/fbdevhw/fbdevhwstub.c
+index 7d554e60a..ef3e28072 100644
+--- a/hw/xfree86/fbdevhw/fbdevhwstub.c
++++ b/hw/xfree86/fbdevhw/fbdevhwstub.c
+@@ -20,13 +20,13 @@ fbdevHWFreeRec(ScrnInfoPtr pScrn)
+ }
+ 
+ Bool
+-fbdevHWProbe(struct pci_device *pPci, char *device, char **namep)
++fbdevHWProbe(void *pPci, char *device, char **namep)
+ {
+     return FALSE;
+ }
+ 
+ Bool
+-fbdevHWInit(ScrnInfoPtr pScrn, struct pci_device *pPci, char *device)
++fbdevHWInit(ScrnInfoPtr pScrn, void *pPci, char *device)
+ {
+     xf86Msg(X_ERROR, "fbdevhw is not available on this platform\n");
+     return FALSE;
 diff --git a/hw/xfree86/os-support/shared/posix_tty.c b/hw/xfree86/os-support/shared/posix_tty.c
-index 0cb9788..e8cac5d 100644
+index 0cb9788cc..e8cac5d39 100644
 --- a/hw/xfree86/os-support/shared/posix_tty.c
 +++ b/hw/xfree86/os-support/shared/posix_tty.c
 @@ -56,6 +56,9 @@
@@ -221,7 +241,7 @@ index 0cb9788..e8cac5d 100644
  #include <xserver_poll.h>
  #include "xf86.h"
 diff --git a/hw/xfree86/os-support/shared/sigio.c b/hw/xfree86/os-support/shared/sigio.c
-index ad8af60..6f81278 100644
+index ad8af6093..6f81278d4 100644
 --- a/hw/xfree86/os-support/shared/sigio.c
 +++ b/hw/xfree86/os-support/shared/sigio.c
 @@ -56,6 +56,9 @@
@@ -235,7 +255,7 @@ index ad8af60..6f81278 100644
  #include <xserver_poll.h>
  #include "xf86.h"
 diff --git a/meson.build b/meson.build
-index 39e6e90..962e84f 100644
+index 5add847b1..f733f9657 100644
 --- a/meson.build
 +++ b/meson.build
 @@ -41,7 +41,7 @@ if cc.get_id() == 'gcc' or cc.get_id() == 'clang'
@@ -247,8 +267,40 @@ index 39e6e90..962e84f 100644
          '-Werror=write-strings',
          '-Werror=address',
          '-Werror=int-to-pointer-cast',
+@@ -318,6 +318,10 @@ test_sha1 = [
+     'libcrypto',
+ ]
+ 
++if host_machine.system() == 'seele'
++    test_sha1 = ['fallback']
++endif
++
+ if get_option('sha1') != 'auto'
+     test_sha1 = [get_option('sha1')]
+ endif
+@@ -375,6 +379,9 @@ foreach t : test_sha1
+                sha1_dep = openssl_dep
+             endif
+         endif
++    elif t == 'fallback'
++        sha1_found = true
++        sha1_dep = dependency('', required: false)
+     endif
+ 
+     if sha1_found
+@@ -388,6 +395,10 @@ if sha1_found
+ else
+     if get_option('sha1') != 'auto'
+         error('@0@ SHA1 requested, but not found'.format(get_option('sha1')))
++    elif host_machine.system() == 'seele'
++        sha1 = 'fallback'
++        sha1_dep = dependency('', required: false)
++        message('Using Seele fallback SHA1 functions')
+     else
+         error('No suitable SHA1 implementation found')
+     endif
 diff --git a/os/access.c b/os/access.c
-index bf8e961..96c54c7 100644
+index bf8e96162..03958ed4e 100644
 --- a/os/access.c
 +++ b/os/access.c
 @@ -120,7 +120,7 @@ SOFTWARE.
@@ -261,7 +313,7 @@ index bf8e961..96c54c7 100644
  #endif
  #if defined(SYSV) &&  defined(__i386__)
 diff --git a/os/utils.c b/os/utils.c
-index f0d022f..677c581 100644
+index f0d022fba..677c5811e 100644
 --- a/os/utils.c
 +++ b/os/utils.c
 @@ -1412,7 +1412,7 @@ System(const char *command)
@@ -282,4 +334,175 @@ index f0d022f..677c581 100644
  }
  
  int
-
+diff --git a/os/xsha1.c b/os/xsha1.c
+index 859551106..7227707d4 100644
+--- a/os/xsha1.c
++++ b/os/xsha1.c
+@@ -257,6 +257,167 @@ x_sha1_final(void *ctx, unsigned char result[20])
+     return 1;
+ }
+ 
++#elif defined(HAVE_SHA1_IN_FALLBACK)
++
++#include <stdint.h>
++#include <string.h>
++
++typedef struct {
++    uint32_t h[5];
++    uint64_t len;
++    unsigned char block[64];
++    size_t block_len;
++} SHA1_CTX_FALLBACK;
++
++static uint32_t
++sha1_rotl(uint32_t value, unsigned bits)
++{
++    return (value << bits) | (value >> (32 - bits));
++}
++
++static uint32_t
++sha1_load_be32(const unsigned char *data)
++{
++    return ((uint32_t) data[0] << 24) |
++           ((uint32_t) data[1] << 16) |
++           ((uint32_t) data[2] << 8) |
++           (uint32_t) data[3];
++}
++
++static void
++sha1_store_be32(unsigned char *data, uint32_t value)
++{
++    data[0] = (unsigned char) (value >> 24);
++    data[1] = (unsigned char) (value >> 16);
++    data[2] = (unsigned char) (value >> 8);
++    data[3] = (unsigned char) value;
++}
++
++static void
++sha1_transform(SHA1_CTX_FALLBACK *ctx, const unsigned char block[64])
++{
++    uint32_t w[80];
++    uint32_t a = ctx->h[0];
++    uint32_t b = ctx->h[1];
++    uint32_t c = ctx->h[2];
++    uint32_t d = ctx->h[3];
++    uint32_t e = ctx->h[4];
++    int i;
++
++    for (i = 0; i < 16; i++)
++        w[i] = sha1_load_be32(block + i * 4);
++    for (i = 16; i < 80; i++)
++        w[i] = sha1_rotl(w[i - 3] ^ w[i - 8] ^ w[i - 14] ^ w[i - 16], 1);
++
++    for (i = 0; i < 80; i++) {
++        uint32_t f;
++        uint32_t k;
++        uint32_t temp;
++
++        if (i < 20) {
++            f = (b & c) | ((~b) & d);
++            k = 0x5A827999;
++        } else if (i < 40) {
++            f = b ^ c ^ d;
++            k = 0x6ED9EBA1;
++        } else if (i < 60) {
++            f = (b & c) | (b & d) | (c & d);
++            k = 0x8F1BBCDC;
++        } else {
++            f = b ^ c ^ d;
++            k = 0xCA62C1D6;
++        }
++
++        temp = sha1_rotl(a, 5) + f + e + k + w[i];
++        e = d;
++        d = c;
++        c = sha1_rotl(b, 30);
++        b = a;
++        a = temp;
++    }
++
++    ctx->h[0] += a;
++    ctx->h[1] += b;
++    ctx->h[2] += c;
++    ctx->h[3] += d;
++    ctx->h[4] += e;
++}
++
++void *
++x_sha1_init(void)
++{
++    SHA1_CTX_FALLBACK *ctx = malloc(sizeof(*ctx));
++
++    if (!ctx)
++        return NULL;
++
++    ctx->h[0] = 0x67452301;
++    ctx->h[1] = 0xEFCDAB89;
++    ctx->h[2] = 0x98BADCFE;
++    ctx->h[3] = 0x10325476;
++    ctx->h[4] = 0xC3D2E1F0;
++    ctx->len = 0;
++    ctx->block_len = 0;
++    return ctx;
++}
++
++int
++x_sha1_update(void *ctx, void *data, int size)
++{
++    SHA1_CTX_FALLBACK *sha1_ctx = ctx;
++    const unsigned char *input = data;
++    size_t remaining;
++
++    if (size < 0)
++        return 0;
++
++    sha1_ctx->len += (uint64_t) size;
++    remaining = (size_t) size;
++
++    while (remaining > 0) {
++        size_t chunk = sizeof(sha1_ctx->block) - sha1_ctx->block_len;
++        if (chunk > remaining)
++            chunk = remaining;
++
++        memcpy(sha1_ctx->block + sha1_ctx->block_len, input, chunk);
++        sha1_ctx->block_len += chunk;
++        input += chunk;
++        remaining -= chunk;
++
++        if (sha1_ctx->block_len == sizeof(sha1_ctx->block)) {
++            sha1_transform(sha1_ctx, sha1_ctx->block);
++            sha1_ctx->block_len = 0;
++        }
++    }
++
++    return 1;
++}
++
++int
++x_sha1_final(void *ctx, unsigned char result[20])
++{
++    SHA1_CTX_FALLBACK *sha1_ctx = ctx;
++    uint64_t bit_len = sha1_ctx->len * 8;
++    int i;
++
++    sha1_ctx->block[sha1_ctx->block_len++] = 0x80;
++    if (sha1_ctx->block_len > 56) {
++        while (sha1_ctx->block_len < 64)
++            sha1_ctx->block[sha1_ctx->block_len++] = 0;
++        sha1_transform(sha1_ctx, sha1_ctx->block);
++        sha1_ctx->block_len = 0;
++    }
++    while (sha1_ctx->block_len < 56)
++        sha1_ctx->block[sha1_ctx->block_len++] = 0;
++    for (i = 0; i < 8; i++)
++        sha1_ctx->block[56 + i] = (unsigned char) (bit_len >> ((7 - i) * 8));
++    sha1_transform(sha1_ctx, sha1_ctx->block);
++    for (i = 0; i < 5; i++)
++        sha1_store_be32(result + i * 4, sha1_ctx->h[i]);
++    free(sha1_ctx);
++    return 1;
++}
++
+ #else                           /* Use OpenSSL's libcrypto */
+ 
+ #include <openssl/opensslv.h>
