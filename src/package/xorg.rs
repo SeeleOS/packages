@@ -1,8 +1,13 @@
-use crate::build::build_meson;
+use crate::build::{build_autotools_with, build_meson};
+use crate::command::{run, CommandSpec};
 use crate::configure::configure_meson;
+use crate::cross::{target_env, TARGET_TRIPLE};
 use crate::fs_utils::copy_file;
-use crate::install::install_meson;
-use crate::layout::{APPDEFAULTDIR, BINDIR, DEFAULT_FONT_PATH, XKB_DIR, XKB_OUTPUT_DIR};
+use crate::install::{install_autotools, install_meson};
+use crate::layout::{
+    APPDEFAULTDIR, BINDIR, DEFAULT_FONT_PATH, INCLUDEDIR, LIB_BINARY_DIR, PREFIX, XKB_DIR,
+    XKB_OUTPUT_DIR,
+};
 use crate::make_autotools_packages;
 use crate::make_meson_packages;
 use crate::make_meta_package;
@@ -16,7 +21,6 @@ fn xorg_server_install_hook(ctx: &crate::types::Context) -> crate::types::Result
 }
 
 make_autotools_packages!(
-    { Zlib, "zlib", tarball_url = "https://zlib.net/fossils/zlib-1.3.1.tar.gz", configure = { args = vec!["--shared".to_string()] } },
     { LibFontenc, "libfontenc", tarball_url = "https://www.x.org/archive/individual/lib/libfontenc-1.1.9.tar.gz", dependencies = [XorgProto, Zlib] },
     { LibIce, "libice", tarball_url = "https://www.x.org/archive/individual/lib/libICE-1.1.2.tar.gz", dependencies = [XorgProto, Xtrans] },
     { LibSm, "libsm", tarball_url = "https://www.x.org/archive/individual/lib/libSM-1.2.6.tar.gz", dependencies = [XorgProto, LibIce], configure = { args = vec!["--without-libuuid".to_string()] } },
@@ -24,7 +28,7 @@ make_autotools_packages!(
     { LibXdamage, "libxdamage", tarball_url = "https://www.x.org/archive/individual/lib/libXdamage-1.1.7.tar.gz", dependencies = [XorgProto, LibX11, LibXfixes] },
     { LibXdmcp, "libxdmcp", tarball_url = "https://www.x.org/archive/individual/lib/libXdmcp-1.1.5.tar.gz", dependencies = [XorgProto] },
     { LibXext, "libxext", tarball_url = "https://www.x.org/archive/individual/lib/libXext-1.3.7.tar.gz", dependencies = [XorgProto, LibX11] },
-    { LibXi, "libxi", tarball_url = "https://www.x.org/archive/individual/lib/libXi-1.8.2.tar.gz", dependencies = [XorgProto, LibXext, LibXfixes] },
+    { LibXi, "libxi", tarball_url = "https://www.x.org/archive/individual/lib/libXi-1.8.2.tar.gz", dependencies = [XorgProto, LibXext, LibXfixes], configure = { args = vec!["--enable-malloc0returnsnull=no".to_string()] } },
     { LibX11, "libx11", tarball_url = "https://www.x.org/archive/individual/lib/libX11-1.8.13.tar.xz", dependencies = [XorgProto, LibXcb, Xtrans], configure = { dynamic_args = |ctx: &crate::types::Context| vec![format!("--with-keysymdefdir={}", ctx.include_root_dir.join("X11").display())] } },
     { LibXfont2, "libxfont2", tarball_url = "https://www.x.org/archive/individual/lib/libXfont2-2.0.7.tar.gz", dependencies = [XorgUtilMacros, XorgProto, LibX11, Xtrans, Freetype2, LibFontenc], configure = { args = vec!["--disable-devel-docs".to_string(), "--disable-selective-werror".to_string()] } },
     { LibXmu, "libxmu", tarball_url = "https://www.x.org/archive/individual/lib/libXmu-1.3.1.tar.gz", dependencies = [LibXext, LibXt] },
@@ -43,6 +47,37 @@ make_autotools_packages!(
     { XorgXmodmap, "xorg-xmodmap", tarball_url = "https://www.x.org/releases/individual/app/xmodmap-1.0.11.tar.xz", dependencies = [LibX11] },
     { XorgXrdb, "xorg-xrdb", tarball_url = "https://www.x.org/releases/individual/app/xrdb-1.2.2.tar.xz", dependencies = [LibX11, LibXmu] },
     { Xtrans, "xtrans", tarball_url = "https://www.x.org/archive/individual/lib/xtrans-1.6.0.tar.gz", dependencies = [XorgUtilMacros] },
+);
+
+make_package!(
+    Zlib,
+    "zlib",
+    tarball_url = "https://zlib.net/fossils/zlib-1.3.1.tar.gz",
+    package_impl = {
+        fn configure(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
+            let paths = self.calc_paths(ctx);
+            run(
+                target_env(
+                    CommandSpec::new("./configure")
+                        .cwd(&paths.src)
+                        .env("CHOST", TARGET_TRIPLE),
+                    ctx,
+                )?
+                .arg(format!("--prefix={PREFIX}"))
+                .arg(format!("--libdir={LIB_BINARY_DIR}"))
+                .arg(format!("--includedir={INCLUDEDIR}"))
+                .arg("--shared"),
+            )
+        }
+
+        fn build(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
+            build_autotools_with(self, ctx, Vec::new(), Vec::new())
+        }
+
+        fn install(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
+            install_autotools(self, ctx)
+        }
+    }
 );
 
 make_meson_packages!(
