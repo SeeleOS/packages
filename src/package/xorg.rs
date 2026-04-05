@@ -1,7 +1,7 @@
 use crate::build::{build_autotools_with, build_meson};
-use crate::command::{run, CommandSpec};
+use crate::command::{CommandSpec, run};
 use crate::configure::{configure_autotools, configure_meson};
-use crate::cross::{target_env, TARGET_TRIPLE};
+use crate::cross::{TARGET_TRIPLE, target_env};
 use crate::fs_utils::copy_file;
 use crate::install::{install_autotools, install_meson};
 use crate::layout::{
@@ -102,18 +102,16 @@ make_package!(
     package_impl = {
         fn configure(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
             let paths = self.calc_paths(ctx);
-            run(
-                target_env(
-                    CommandSpec::new("./configure")
-                        .cwd(&paths.src)
-                        .env("CHOST", TARGET_TRIPLE),
-                    ctx,
-                )?
-                .arg(format!("--prefix={PREFIX}"))
-                .arg(format!("--libdir={LIB_BINARY_DIR}"))
-                .arg(format!("--includedir={INCLUDEDIR}"))
-                .arg("--shared"),
-            )
+            run(target_env(
+                CommandSpec::new("./configure")
+                    .cwd(&paths.src)
+                    .env("CHOST", TARGET_TRIPLE),
+                ctx,
+            )?
+            .arg(format!("--prefix={PREFIX}"))
+            .arg(format!("--libdir={LIB_BINARY_DIR}"))
+            .arg(format!("--includedir={INCLUDEDIR}"))
+            .arg("--shared"))
         }
 
         fn build(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
@@ -145,9 +143,29 @@ make_package!(
     git_url = "https://gitlab.freedesktop.org/xorg/xserver.git",
     git_commit = "312a25c65c8a918fea2cc77abd0db07ec0fc421c",
     dependencies = [
-        XorgUtilMacros, XorgProto, XorgFontUtil, XcbProto, XcbUtil, Xtrans, LibXinerama, LibXcvt,
-        LibXshmfence, LibX11, LibXkbfile, LibXmu, LibXfont2, LibXi, LibXrender, LibXrandr,
-        LibXcb, LibXfixes, LibXext, LibXdamage, Pixman, XorgXkbcomp, XkeyboardConfig
+        XorgUtilMacros,
+        XorgProto,
+        XorgFontUtil,
+        XcbProto,
+        XcbUtil,
+        Xtrans,
+        LibXinerama,
+        LibXcvt,
+        LibXshmfence,
+        LibX11,
+        LibXkbfile,
+        LibXmu,
+        LibXfont2,
+        LibXi,
+        LibXrender,
+        LibXrandr,
+        LibXcb,
+        LibXfixes,
+        LibXext,
+        LibXdamage,
+        Pixman,
+        XorgXkbcomp,
+        XkeyboardConfig
     ],
     package_impl = {
         fn configure(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
@@ -206,6 +224,8 @@ make_meta_package!(
     GuiPackage,
     XorgServer,
     Xf86VideoFbdev,
+    Xf86InputKeyboard,
+    Xf86InputMouse,
     XorgXinit,
     XorgTwm,
     XorgXeyes
