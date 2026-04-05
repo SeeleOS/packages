@@ -41,6 +41,9 @@ make_autotools_packages!(
     { XorgFontUtil, "xorg-font-util", tarball_url = "https://www.x.org/archive/individual/font/font-util-1.4.1.tar.xz", dependencies = [XorgUtilMacros] },
     { XorgTwm, "xorg-twm", tarball_url = "https://www.x.org/pub/individual/app/twm-1.0.13.1.tar.xz", dependencies = [LibXmu] },
     { XorgUtilMacros, "xorg-util-macros", tarball_url = "https://www.x.org/archive/individual/util/util-macros-1.20.2.tar.gz" },
+    { Xf86InputKeyboard, "xf86-input-keyboard", tarball_url = "https://www.x.org/archive/individual/driver/xf86-input-keyboard-1.9.0.tar.gz", dependencies = [XorgServer] },
+    { Xf86InputMouse, "xf86-input-mouse", tarball_url = "https://www.x.org/archive/individual/driver/xf86-input-mouse-1.9.3.tar.gz", dependencies = [XorgServer] },
+    { Xf86VideoFbdev, "xf86-video-fbdev", tarball_url = "https://www.x.org/archive/individual/driver/xf86-video-fbdev-0.5.1.tar.gz", dependencies = [XorgServer] },
     { XorgXauth, "xorg-xauth", tarball_url = "https://www.x.org/releases/individual/app/xauth-1.1.5.tar.xz", dependencies = [LibXmu, LibXau, LibXext, LibX11] },
     { XorgXinit, "xorg-xinit", tarball_url = "https://www.x.org/releases/individual/app/xinit-1.4.4.tar.xz", dependencies = [LibX11, XorgXauth, XorgXmodmap, XorgXrdb] },
     { XorgXkbcomp, "xorg-xkbcomp", tarball_url = "https://www.x.org/archive/individual/app/xkbcomp-1.5.0.tar.gz", dependencies = [LibXkbfile, LibX11] },
@@ -155,7 +158,17 @@ make_package!(
 );
 
 pub struct GuiPackage;
-make_meta_package!("gui", GuiPackage, XorgServer, XorgXinit, XorgTwm, XorgXeyes);
+make_meta_package!(
+    "gui",
+    GuiPackage,
+    XorgServer,
+    Xf86VideoFbdev,
+    Xf86InputKeyboard,
+    Xf86InputMouse,
+    XorgXinit,
+    XorgTwm,
+    XorgXeyes
+);
 
 pub struct XorgPackage;
 make_meta_package!("xorg", XorgPackage, GuiPackage);
