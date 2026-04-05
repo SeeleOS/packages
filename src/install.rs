@@ -1,10 +1,11 @@
 use crate::{
     command::{run, CommandSpec},
     fs_utils::{copy_dir_contents, copy_file, ensure_dir, verify_same_size},
-    misc::{deployed_sysroot_dir, mount_sysroot, sysroot_dir},
+    misc::{deployed_sysroot_dir, mount_sysroot, sysroot_dir, walk_files},
     r#trait::Package,
     types::{Context, Result},
 };
+use std::fs;
 
 #[macro_export]
 macro_rules! install_wrap {
@@ -56,7 +57,8 @@ pub fn install_make_in(cwd: &std::path::Path, ctx: &Context) -> Result<()> {
         .arg("make")
         .arg("-C")
         .arg(cwd)
-        .arg("install"))
+        .arg("install"))?;
+    prune_libtool_archives(&sysroot)
 }
 
 pub fn install_meson(pkg: &dyn Package, ctx: &Context) -> Result<()> {
@@ -69,7 +71,8 @@ pub fn install_meson(pkg: &dyn Package, ctx: &Context) -> Result<()> {
         .arg("install")
         .arg("--no-rebuild")
         .arg("-C")
-        .arg(&paths.build))
+        .arg(&paths.build))?;
+    prune_libtool_archives(&sysroot)
 }
 
 pub fn install_cargo(pkg: &dyn Package, ctx: &Context, bins: Vec<String>, profile: &str) -> Result<()> {
@@ -107,4 +110,15 @@ pub fn deploy_sysroot(ctx: &Context) -> Result<()> {
         .arg(staging.join("."))
         .arg(&deployed))?;
     run(CommandSpec::new("sync"))
+}
+
+fn prune_libtool_archives(root: &std::path::Path) -> Result<()> {
+    let mut files = Vec::new();
+    walk_files(root, &mut files)?;
+    for path in files {
+        if path.extension().is_some_and(|ext| ext == "la") {
+            fs::remove_file(path)?;
+        }
+    }
+    Ok(())
 }
