@@ -1,15 +1,22 @@
 use crate::{
-    command::{make, run, CommandSpec},
+    command::{CommandSpec, make, run},
+    configure::with_envs,
     cross::{pkg_env, target_env},
     r#trait::Package,
-    configure::with_envs,
     types::{Context, Result},
 };
-use std::path::Path;
+use std::{path::Path, sync::atomic::AtomicBool};
 
 pub const CC: &str = "clang --target=x86_64-seele";
+static RELIBC_INSTALLED: AtomicBool = AtomicBool::new(false);
 
 pub fn build_relibc(ctx: &Context) -> Result<()> {
+    if RELIBC_INSTALLED.load(std::sync::atomic::Ordering::Relaxed) {
+        return Ok(());
+    }
+
+    RELIBC_INSTALLED.store(true, std::sync::atomic::Ordering::Relaxed);
+
     run(make()
         .cwd(&ctx.relibc_root)
         .env_remove("CARGO")
