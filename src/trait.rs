@@ -39,7 +39,10 @@ fn apply_patch_file(src_dir: &std::path::Path, patch: &std::path::Path) -> Resul
 
     let dry_run_text = patch_output_text(&dry_run);
     if dry_run_text.contains("Reversed (or previously applied) patch detected") {
-        eprintln!("[packages] skipping already applied patch {}", patch.display());
+        eprintln!(
+            "[packages] skipping already applied patch {}",
+            patch.display()
+        );
         return Ok(());
     }
 
@@ -48,10 +51,6 @@ fn apply_patch_file(src_dir: &std::path::Path, patch: &std::path::Path) -> Resul
 
 pub trait Package {
     fn name(&self) -> &'static str;
-
-    fn install_name(&self) -> &'static str {
-        self.name()
-    }
 
     fn calc_paths(&self, ctx: &Context) -> PackagePaths {
         let root = ctx.packages_root.join("work").join(self.name());
@@ -113,7 +112,13 @@ pub trait Package {
         paths.ensure()?;
         with_stamp(|| self.patch(ctx), "patch", &paths, ctx.rebuild, false)?;
         paths.ensure()?;
-        with_stamp(|| self.configure(ctx), "configure", &paths, ctx.rebuild, false)?;
+        with_stamp(
+            || self.configure(ctx),
+            "configure",
+            &paths,
+            ctx.rebuild,
+            false,
+        )?;
         paths.ensure()?;
         with_stamp(|| self.build(ctx), "build", &paths, ctx.rebuild, false)?;
         paths.ensure()?;
