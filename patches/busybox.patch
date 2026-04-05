@@ -1,0 +1,103 @@
+diff --git a/Makefile b/Makefile
+index 1ec8ac3..49c26a0 100644
+--- a/Makefile
++++ b/Makefile
+@@ -102,7 +102,7 @@ ifneq ($(KBUILD_OUTPUT),)
+ # Invoke a second make in the output directory, passing relevant variables
+ # check that the output directory actually exists
+ saved-output := $(KBUILD_OUTPUT)
+-KBUILD_OUTPUT := $(shell cd $(KBUILD_OUTPUT) && /bin/pwd)
++KBUILD_OUTPUT := $(shell cd $(KBUILD_OUTPUT) && pwd)
+ $(if $(KBUILD_OUTPUT),, \
+      $(error output directory "$(saved-output)" does not exist))
+ 
+
+diff --git a/include/platform.h b/include/platform.h
+index ea0512f..9f63957 100644
+--- a/include/platform.h
++++ b/include/platform.h
+@@ -165,7 +165,17 @@
+ # define bswap_32 __bswap32
+ # define bswap_16 __bswap16
+ #else
+-# include <byteswap.h>
++# if defined(__has_include)
++#  if __has_include(<byteswap.h>)
++#   include <byteswap.h>
++#  else
++#   define bswap_16(x) __builtin_bswap16(x)
++#   define bswap_32(x) __builtin_bswap32(x)
++#   define bswap_64(x) __builtin_bswap64(x)
++#  endif
++# else
++#  include <byteswap.h>
++# endif
+ # include <endian.h>
+ #endif
+ 
+@@ -494,6 +504,17 @@ typedef unsigned smalluint;
+ # undef HAVE_STRCHRNUL
+ #endif
+ 
++#if defined(__seele__)
++# undef HAVE_CLEARENV
++# undef HAVE_MEMPCPY
++# undef HAVE_MNTENT_H
++# undef HAVE_STRVERSCMP
++# undef HAVE_SYS_STATFS_H
++# undef HAVE_UNLOCKED_LINE_OPS
++# undef HAVE_UNLOCKED_STDIO
++# define vfork fork
++#endif
++
+ #if defined(__APPLE__)
+ # undef HAVE_STRCHRNUL
+ #endif
+
+diff --git a/libbb/alloc_affinity.c b/libbb/alloc_affinity.c
+index b6d9f64..3567ab9 100644
+--- a/libbb/alloc_affinity.c
++++ b/libbb/alloc_affinity.c
+@@ -14,6 +14,15 @@ unsigned long* FAST_FUNC get_malloc_cpu_affinity(int pid, unsigned *sz)
+ 	unsigned long *mask = NULL;
+ 	unsigned sz_in_bytes = *sz;
+ 
++#if defined(__seele__)
++	(void) pid;
++	if (sz_in_bytes < sizeof(unsigned long))
++		sz_in_bytes = sizeof(unsigned long);
++	mask = xzalloc(sz_in_bytes);
++	mask[0] = 1;
++	*sz = sz_in_bytes;
++	return mask;
++#else
+ 	for (;;) {
+ 		mask = xrealloc(mask, sz_in_bytes);
+ 		if (sched_getaffinity(pid, sz_in_bytes, (void*)mask) == 0)
+@@ -26,4 +35,5 @@ unsigned long* FAST_FUNC get_malloc_cpu_affinity(int pid, unsigned *sz)
+ 	//bb_error_msg("get mask[0]:%lx sz_in_bytes:%d", mask[0], sz_in_bytes);
+ 	*sz = sz_in_bytes;
+ 	return mask;
++#endif
+ }
+
+diff --git a/libbb/xfuncs_printf.c b/libbb/xfuncs_printf.c
+index 842d10c..9c53bb3 100644
+--- a/libbb/xfuncs_printf.c
++++ b/libbb/xfuncs_printf.c
+@@ -726,8 +726,14 @@ int FAST_FUNC wait_for_exitstatus(pid_t pid)
+ 
+ void FAST_FUNC xsettimeofday(const struct timeval *tv)
+ {
++#if defined(__seele__)
++	(void) tv;
++	errno = ENOSYS;
++	bb_simple_perror_msg_and_die("settimeofday");
++#else
+ 	if (settimeofday(tv, NULL))
+ 		bb_simple_perror_msg_and_die("settimeofday");
++#endif
+ }
+ 
+ void FAST_FUNC xgettimeofday(struct timeval *tv)
+

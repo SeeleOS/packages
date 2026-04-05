@@ -77,7 +77,7 @@ pub struct PackagePaths {
     pub root: PathBuf,
     pub src: PathBuf,
     pub stamp: PathBuf,
-    pub patches: PathBuf,
+    pub patch: PathBuf,
     pub build: PathBuf,
 }
 
@@ -86,7 +86,6 @@ impl PackagePaths {
         ensure_dir(&self.root)?;
         ensure_dir(&self.src)?;
         ensure_dir(&self.stamp)?;
-        ensure_dir(&self.patches)?;
         ensure_dir(&self.build)?;
 
         Ok(())

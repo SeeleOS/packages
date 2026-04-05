@@ -72,3 +72,48 @@ index 9c7e99e..c666156 100644
 -- 
 2.52.0
 
+
+From c499647d355bee4a92f8013474a34ab5da2001be Mon Sep 17 00:00:00 2001
+From: elysia <3302843873@qq.com>
+Date: Thu, 19 Mar 2026 07:32:39 +0800
+Subject: [PATCH 2/2] mooar rstuff
+
+---
+ lib/readline/terminal.c | 13 +++++++++++--
+ 1 file changed, 11 insertions(+), 2 deletions(-)
+
+diff --git a/lib/readline/terminal.c b/lib/readline/terminal.c
+index 50fb904..8b0787a 100644
+--- a/lib/readline/terminal.c
++++ b/lib/readline/terminal.c
+@@ -69,6 +69,14 @@
+ #include "rlshell.h"
+ #include "xmalloc.h"
+ 
++/* relibc's termios.h declares tcgetwinsize/tcsetwinsize with an internal
++   struct winsize type that does not match the one from sys/ioctl.h.
++   For seele, avoid using these helpers and fall back to the ioctl path
++   (or environment variables) instead. */
++#if defined (__seele__)
++#  undef HAVE_TCGETWINSIZE
++#endif
++
+ #if defined (_WIN32)
+ #  include <windows.h>
+ #  include <wincon.h>
+@@ -103,8 +111,9 @@ static char *term_string_buffer = (char *)NULL;
+ static int tcap_initialized;
+ 
+ /* Systems for which PC/BC/UP are defined in the curses library and need an
+-   extern definition here. */
+-#if !defined (__linux__) && !defined (__gnu_hurd__) && !defined (NCURSES_VERSION)
++   extern definition here.  Treat seele like Linux here: the termcap
++   library provides the real definitions, so we only want extern refs. */
++#if !defined (__linux__) && !defined (__gnu_hurd__) && !defined (NCURSES_VERSION) && !defined (__seele__)
+ #  if defined (__EMX__) || defined (NEED_EXTERN_PC)
+ extern
+ #  endif /* __EMX__ || NEED_EXTERN_PC */
+-- 
+2.52.0
+
+

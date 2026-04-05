@@ -39,7 +39,10 @@ fn apply_patch_file(src_dir: &std::path::Path, patch: &std::path::Path) -> Resul
 
     let dry_run_text = patch_output_text(&dry_run);
     if dry_run_text.contains("Reversed (or previously applied) patch detected") {
-        eprintln!("[packages] skipping already applied patch {}", patch.display());
+        eprintln!(
+            "[packages] skipping already applied patch {}",
+            patch.display()
+        );
         return Ok(());
     }
 
@@ -58,7 +61,10 @@ pub trait Package {
         PackagePaths {
             src: root.join("src"),
             stamp: root.join(".stamp"),
-            patches: ctx.packages_root.join(self.name()).join("patches"),
+            patch: ctx
+                .packages_root
+                .join("patches")
+                .join(format!("{}.patch", self.name())),
             build: root.join("src/build"),
             root,
         }
@@ -69,13 +75,8 @@ pub trait Package {
     fn patch(&self, ctx: &Context) -> Result<()> {
         let paths = self.calc_paths(ctx);
         ensure_dir(&paths.stamp)?;
-        let mut patches = list_patch_files(&paths.patches)?;
-        if patches.is_empty() {
-            return Ok(());
-        }
-        patches.sort();
-        for patch in patches {
-            apply_patch_file(&paths.src, &patch)?;
+        if paths.patch.exists() {
+            apply_patch_file(&paths.src, &paths.patch)?;
         }
         Ok(())
     }
@@ -113,7 +114,13 @@ pub trait Package {
         paths.ensure()?;
         with_stamp(|| self.patch(ctx), "patch", &paths, ctx.rebuild, false)?;
         paths.ensure()?;
-        with_stamp(|| self.configure(ctx), "configure", &paths, ctx.rebuild, false)?;
+        with_stamp(
+            || self.configure(ctx),
+            "configure",
+            &paths,
+            ctx.rebuild,
+            false,
+        )?;
         paths.ensure()?;
         with_stamp(|| self.build(ctx), "build", &paths, ctx.rebuild, false)?;
         paths.ensure()?;
