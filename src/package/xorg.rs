@@ -32,6 +32,8 @@ make_autotools_packages!(
     { LibX11, "libx11", tarball_url = "https://www.x.org/archive/individual/lib/libX11-1.8.13.tar.xz", dependencies = [XorgProto, LibXcb, Xtrans], configure = { dynamic_args = |ctx: &crate::types::Context| vec![format!("--with-keysymdefdir={}", ctx.include_root_dir.join("X11").display())] } },
     { LibXfont2, "libxfont2", tarball_url = "https://www.x.org/archive/individual/lib/libXfont2-2.0.7.tar.gz", dependencies = [XorgUtilMacros, XorgProto, LibX11, Xtrans, Freetype2, LibFontenc], configure = { args = vec!["--disable-devel-docs".to_string(), "--disable-selective-werror".to_string()] } },
     { LibXmu, "libxmu", tarball_url = "https://www.x.org/archive/individual/lib/libXmu-1.3.1.tar.gz", dependencies = [LibXext, LibXt] },
+    { LibXpm, "libxpm", tarball_url = "https://www.x.org/archive/individual/lib/libXpm-3.5.17.tar.xz", dependencies = [LibX11, XorgProto] },
+    { LibXaw, "libxaw", tarball_url = "https://www.x.org/archive/individual/lib/libXaw-1.0.16.tar.xz", dependencies = [LibX11, LibXt, LibXmu, LibXpm] },
     { LibXrandr, "libxrandr", tarball_url = "https://www.x.org/archive/individual/lib/libXrandr-1.5.5.tar.gz", dependencies = [XorgProto, LibX11, LibXrender, LibXext] },
     { LibXrender, "libxrender", tarball_url = "https://www.x.org/archive/individual/lib/libXrender-0.9.12.tar.gz", dependencies = [XorgProto, LibX11] },
     { LibXshmfence, "libxshmfence", tarball_url = "https://www.x.org/archive/individual/lib/libxshmfence-1.3.3.tar.gz", dependencies = [XorgProto] },
@@ -48,6 +50,7 @@ make_autotools_packages!(
     { XorgXkbcomp, "xorg-xkbcomp", tarball_url = "https://www.x.org/archive/individual/app/xkbcomp-1.5.0.tar.gz", dependencies = [LibXkbfile, LibX11] },
     { XorgXmodmap, "xorg-xmodmap", tarball_url = "https://www.x.org/releases/individual/app/xmodmap-1.0.11.tar.xz", dependencies = [LibX11] },
     { XorgXrdb, "xorg-xrdb", tarball_url = "https://www.x.org/releases/individual/app/xrdb-1.2.2.tar.xz", dependencies = [LibX11, LibXmu] },
+    { XorgXclock, "xorg-xclock", tarball_url = "https://www.x.org/releases/individual/app/xclock-1.1.1.tar.xz", dependencies = [LibX11, LibXrender, LibXaw], configure = { args = vec!["--with-xft=no".to_string()] } },
     { Xtrans, "xtrans", tarball_url = "https://www.x.org/archive/individual/lib/xtrans-1.6.0.tar.gz", dependencies = [XorgUtilMacros] },
 );
 
@@ -203,8 +206,6 @@ make_meta_package!(
     GuiPackage,
     XorgServer,
     Xf86VideoFbdev,
-    Xf86InputKeyboard,
-    Xf86InputMouse,
     XorgXinit,
     XorgTwm,
     XorgXeyes
