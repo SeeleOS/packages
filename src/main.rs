@@ -33,6 +33,7 @@ fn usage() {
     eprintln!("Usage:");
     eprintln!("  cargo run install <package> [--rebuild] [--ignore-deps]   # build and install into sysroot");
     eprintln!("  cargo run clean <package> [--rebuild] [--ignore-deps]");
+    eprintln!("  cargo run rebuild-only <package>                          # clean package, then install with --rebuild --ignore-deps");
 }
 
 fn package_by_name(name: &str) -> Option<Box<dyn Package>> {
@@ -105,8 +106,8 @@ fn run() -> Result<()> {
     };
 
     let mut pkg_name = None;
-    let mut rebuild = false;
-    let mut ignore_deps = false;
+    let mut rebuild = matches!(action, Action::RebuildOnly);
+    let mut ignore_deps = matches!(action, Action::RebuildOnly);
     for arg in args {
         if arg == "--rebuild" {
             rebuild = true;

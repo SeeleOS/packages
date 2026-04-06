@@ -136,6 +136,11 @@ pub trait Package {
                 deploy_sysroot(ctx)
             }
             Action::Clean => self.clean(ctx),
+            Action::RebuildOnly => {
+                self.clean(ctx)?;
+                self.make(ctx)?;
+                deploy_sysroot(ctx)
+            }
         }
     }
 }

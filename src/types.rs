@@ -9,6 +9,7 @@ pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 pub enum Action {
     Install,
     Clean,
+    RebuildOnly,
 }
 
 impl Action {
@@ -16,6 +17,7 @@ impl Action {
         match value {
             "install" => Some(Action::Install),
             "clean" => Some(Action::Clean),
+            "rebuild-only" => Some(Action::RebuildOnly),
             _ => None,
         }
     }
