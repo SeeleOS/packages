@@ -1,6 +1,8 @@
+diff --git a/src/fbdev.c b/src/fbdev.c
+index 939c5b8..f464e0a 100644
 --- a/src/fbdev.c
 +++ b/src/fbdev.c
-@@ -308,10 +308,7 @@ static Bool
+@@ -308,10 +308,7 @@ FBDevProbe(DriverPtr drv, int flags)
  	ScrnInfoPtr pScrn;
         	GDevPtr *devSections;
  	int numDevSections;
@@ -12,7 +14,7 @@
  	Bool foundScreen = FALSE;
  
  	TRACE("probe start");
-@@ -327,47 +324,15 @@ static Bool
+@@ -327,47 +324,15 @@ FBDevProbe(DriverPtr drv, int flags)
  	    return FALSE;
  	    
  	for (i = 0; i < numDevSections; i++) {
@@ -49,11 +51,11 @@
 -		    pScrn->name          = FBDEV_NAME;
 -		    xf86DrvMsg(pScrn->scrnIndex, X_CONFIG,
 -			       "claimed PCI slot %d:%d:%d\n",bus,device,func);
--
+ 
 -#endif
 -		} else {
 -		   int entity;
- 
+-
 -		    entity = xf86ClaimFbSlot(drv, 0,
 -					      devSections[i], TRUE);
 -		    pScrn = xf86ConfigFbEntity(pScrn,0,entity,
@@ -65,7 +67,7 @@
  		}
  		if (pScrn) {
  		    foundScreen = TRUE;
-@@ -418,23 +383,12 @@ static Bool
+@@ -418,23 +383,12 @@ FBDevPreInit(ScrnInfoPtr pScrn, int flags)
  
  	fPtr->pEnt = xf86GetEntityInfo(pScrn->entityList[0]);
  
@@ -91,3 +93,49 @@
  			 xf86FindOptionValue(fPtr->pEnt->device->options,
  					     "fbdev")))
  		return FALSE;
+@@ -519,7 +473,11 @@ FBDevPreInit(ScrnInfoPtr pScrn, int flags)
+ 	xf86ProcessOptions(pScrn->scrnIndex, fPtr->pEnt->device->options, fPtr->Options);
+ 
+ 	/* use shadow framebuffer by default */
++#ifdef __seele__
++	fPtr->shadowFB = xf86ReturnOptValBool(fPtr->Options, OPTION_SHADOW_FB, FALSE);
++#else
+ 	fPtr->shadowFB = xf86ReturnOptValBool(fPtr->Options, OPTION_SHADOW_FB, TRUE);
++#endif
+         if (!fPtr->shadowFB && fPtr->shadow24) {
+             xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "24bpp requires shadow framebuffer, forcing\n");
+@@ -825,6 +783,10 @@ FBDevScreenInit(ScreenPtr pScreen, int argc, char **argv)
+ 	}
+ 
+ 	fPtr->fbstart = fPtr->fbmem + fPtr->fboff;
++	xf86DrvMsg(pScrn->scrnIndex, X_INFO,
++		   "shadow target fbmem=%p fbstart=%p fboff=%d line_length=%d shadow=%d\n",
++		   fPtr->fbmem, fPtr->fbstart, fPtr->fboff,
++		   fbdevHWGetLineLength(pScrn), fPtr->shadowFB);
+ 
+ 	if (fPtr->shadowFB) {
+ 	    fPtr->shadow = calloc(1, pScrn->displayWidth * pScrn->virtualY *
+@@ -1038,6 +1000,7 @@ FBDevWindowLinear(ScreenPtr pScreen, CARD32 row, CARD32 offset, int mode,
+ {
+     ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
+     FBDevPtr fPtr = FBDEVPTR(pScrn);
++    static Bool logged_window = FALSE;
+ 
+     if (!pScrn->vtSema)
+       return NULL;
+@@ -1047,6 +1010,14 @@ FBDevWindowLinear(ScreenPtr pScreen, CARD32 row, CARD32 offset, int mode,
+     else
+       *size = fPtr->lineLength = fbdevHWGetLineLength(pScrn);
+ 
++    if (!logged_window) {
++      xf86DrvMsg(pScrn->scrnIndex, X_INFO,
++		 "shadow flush row=%u offset=%u size=%u target=%p\n",
++		 row, offset, *size,
++		 ((CARD8 *)fPtr->fbstart + row * fPtr->lineLength + offset));
++      logged_window = TRUE;
++    }
++
+     return ((CARD8 *)fPtr->fbstart + row * fPtr->lineLength + offset);
+ }
+ 

@@ -1,3 +1,94 @@
+diff --git a/dix/dispatch.c b/dix/dispatch.c
+index 15e63e22a..9f0332282 100644
+--- a/dix/dispatch.c
++++ b/dix/dispatch.c
+@@ -476,6 +476,7 @@ Dispatch(void)
+     int result;
+     ClientPtr client;
+     long start_tick;
++    static Bool logged_dispatch = FALSE;
+ 
+     nextFreeClientID = 1;
+     nClients = 0;
+@@ -484,6 +485,11 @@ Dispatch(void)
+     init_client_ready();
+ 
+     while (!dispatchException) {
++        if (!logged_dispatch) {
++            ErrorF("dispatch: entered main loop\n");
++            logged_dispatch = TRUE;
++        }
++
+         if (InputCheckPending()) {
+             ProcessInputEvents();
+             FlushIfCriticalOutputPending();
+@@ -3659,6 +3665,9 @@ ProcInitialConnection(ClientPtr client)
+     int whichbyte = 1;
+     char order;
+ 
++    ErrorF("dispatch: ProcInitialConnection client=%d req_len=%u\n",
++           client->index, client->req_len);
++
+     prefix = (xConnClientPrefix *) ((char *)stuff + sz_xReq);
+     order = prefix->byteOrder;
+     if (order != 'l' && order != 'B' && order != 'r' && order != 'R')
+@@ -3801,6 +3810,12 @@ ProcEstablishConnection(ClientPtr client)
+                                   (unsigned short) prefix->nbytesAuthString,
+                                   auth_string);
+ 
++    ErrorF("dispatch: ProcEstablishConnection client=%d auth_proto_len=%u auth_string_len=%u reason=%s\n",
++           client->index,
++           (unsigned) prefix->nbytesAuthProto,
++           (unsigned) prefix->nbytesAuthString,
++           reason ? reason : "<ok>");
++
+     return (SendConnSetup(client, reason));
+ }
+ 
+@@ -4145,4 +4160,3 @@ DetachOffloadGPU(ScreenPtr secondary)
+     assert(secondary->is_offload_secondary);
+     secondary->is_offload_secondary = FALSE;
+ }
+-
+diff --git a/dix/main.c b/dix/main.c
+index 38e29cebb..d260e47ad 100644
+--- a/dix/main.c
++++ b/dix/main.c
+@@ -244,14 +244,20 @@ dix_main(int argc, char *argv[], char *envp[])
+         for (i = 0; i < screenInfo.numScreens; i++)
+             InitRootWindow(screenInfo.screens[i]->root);
+ 
++        ErrorF("main: before InitCoreDevices\n");
+         InitCoreDevices();
++        ErrorF("main: after InitCoreDevices\n");
+         InitInput(argc, argv);
++        ErrorF("main: after InitInput\n");
+         InitAndStartDevices();
++        ErrorF("main: after InitAndStartDevices\n");
+         ReserveClientIds(serverClient);
++        ErrorF("main: after ReserveClientIds\n");
+ 
+         dixSaveScreens(serverClient, SCREEN_SAVER_FORCER, ScreenSaverReset);
+ 
+         dixCloseRegistry();
++        ErrorF("main: after dixCloseRegistry\n");
+ 
+ #ifdef PANORAMIX
+         if (!noPanoramiXExtension) {
+@@ -266,10 +272,13 @@ dix_main(int argc, char *argv[], char *envp[])
+                 FatalError("could not create connection block info");
+             }
+         }
++        ErrorF("main: after CreateConnectionBlock\n");
+ 
+         NotifyParentProcess();
++        ErrorF("main: after NotifyParentProcess\n");
+ 
+         InputThreadInit();
++        ErrorF("main: after InputThreadInit\n");
+ 
+         Dispatch();
+ 
 diff --git a/hw/xfree86/common/xf86Bus.c b/hw/xfree86/common/xf86Bus.c
 index fd144dbe7..6eb018ce4 100644
 --- a/hw/xfree86/common/xf86Bus.c
@@ -83,29 +174,6 @@ index 5695e71ac..96c2d151f 100644
  #undef HAS_UTSNAME
  #if !defined(WIN32)
  #define HAS_UTSNAME 1
-diff --git a/hw/xfree86/os-support/xf86_OSlib.h b/hw/xfree86/os-support/xf86_OSlib.h
-index 159c8064c..3cc69de59 100644
---- a/hw/xfree86/os-support/xf86_OSlib.h
-+++ b/hw/xfree86/os-support/xf86_OSlib.h
-@@ -176,7 +176,7 @@ extern _X_HIDDEN char xf86SolarisFbDev[PATH_MAX];
- /**************************************************************************/
- /* Linux or Glibc-based system                                            */
- /**************************************************************************/
--#if defined(__linux__) || defined(__GLIBC__) || defined(__CYGWIN__)
-+#if defined(__linux__) || defined(__GLIBC__) || defined(__CYGWIN__) || defined(__seele__)
- #include <sys/ioctl.h>
- #include <signal.h>
- #include <stdlib.h>
-@@ -193,7 +193,7 @@ extern _X_HIDDEN char xf86SolarisFbDev[PATH_MAX];
- #include <sys/stat.h>
- 
- #include <sys/mman.h>
--#ifdef __linux__
-+#if defined(__linux__) || defined(__seele__)
- #define HAS_USL_VTS
- #include <sys/kd.h>
- #include <sys/vt.h>
-
 diff --git a/hw/xfree86/fbdevhw/fbdevhw.c b/hw/xfree86/fbdevhw/fbdevhw.c
 index 9c30f00cc..17dfafc0e 100644
 --- a/hw/xfree86/fbdevhw/fbdevhw.c
@@ -287,6 +355,28 @@ index ad8af6093..6f81278d4 100644
  #include <X11/X.h>
  #include <xserver_poll.h>
  #include "xf86.h"
+diff --git a/hw/xfree86/os-support/xf86_OSlib.h b/hw/xfree86/os-support/xf86_OSlib.h
+index 159c8064c..3cc69de59 100644
+--- a/hw/xfree86/os-support/xf86_OSlib.h
++++ b/hw/xfree86/os-support/xf86_OSlib.h
+@@ -176,7 +176,7 @@ extern _X_HIDDEN char xf86SolarisFbDev[PATH_MAX];
+ /**************************************************************************/
+ /* Linux or Glibc-based system                                            */
+ /**************************************************************************/
+-#if defined(__linux__) || defined(__GLIBC__) || defined(__CYGWIN__)
++#if defined(__linux__) || defined(__GLIBC__) || defined(__CYGWIN__) || defined(__seele__)
+ #include <sys/ioctl.h>
+ #include <signal.h>
+ #include <stdlib.h>
+@@ -193,7 +193,7 @@ extern _X_HIDDEN char xf86SolarisFbDev[PATH_MAX];
+ #include <sys/stat.h>
+ 
+ #include <sys/mman.h>
+-#ifdef __linux__
++#if defined(__linux__) || defined(__seele__)
+ #define HAS_USL_VTS
+ #include <sys/kd.h>
+ #include <sys/vt.h>
 diff --git a/meson.build b/meson.build
 index 5add847b1..f733f9657 100644
 --- a/meson.build
@@ -332,6 +422,83 @@ index 5add847b1..f733f9657 100644
      else
          error('No suitable SHA1 implementation found')
      endif
+diff --git a/miext/shadow/shadow.c b/miext/shadow/shadow.c
+index e8d0d51b0..d75c2e78e 100644
+--- a/miext/shadow/shadow.c
++++ b/miext/shadow/shadow.c
+@@ -57,11 +57,16 @@ shadowRedisplay(ScreenPtr pScreen)
+ {
+     shadowBuf(pScreen);
+     RegionPtr pRegion;
++    static Bool logged_damage = FALSE;
+ 
+     if (!pBuf || !pBuf->pDamage || !pBuf->update)
+         return;
+     pRegion = DamageRegion(pBuf->pDamage);
+     if (RegionNotEmpty(pRegion)) {
++        if (!logged_damage) {
++            ErrorF("shadow: redisplay rects=%d\n", RegionNumRects(pRegion));
++            logged_damage = TRUE;
++        }
+         (*pBuf->update) (pScreen, pBuf);
+         DamageEmpty(pBuf->pDamage);
+     }
+@@ -71,6 +76,12 @@ static void
+ shadowBlockHandler(ScreenPtr pScreen, void *timeout)
+ {
+     shadowBuf(pScreen);
++    static Bool logged_block = FALSE;
++
++    if (!logged_block) {
++        ErrorF("shadow: block handler entered\n");
++        logged_block = TRUE;
++    }
+ 
+     shadowRedisplay(pScreen);
+ 
+@@ -151,6 +162,7 @@ shadowAdd(ScreenPtr pScreen, PixmapPtr pPixmap, ShadowUpdateProc update,
+           ShadowWindowProc window, int randr, void *closure)
+ {
+     shadowBuf(pScreen);
++    static Bool logged_add = FALSE;
+ 
+     /*
+      * Map simple rotation values to bitmasks; fortunately,
+@@ -175,6 +187,11 @@ shadowAdd(ScreenPtr pScreen, PixmapPtr pPixmap, ShadowUpdateProc update,
+     pBuf->randr = randr;
+     pBuf->closure = closure;
+     pBuf->pPixmap = pPixmap;
++    if (!logged_add) {
++        ErrorF("shadow: add update=%p window=%p pixmap=%p randr=%d\n",
++               update, window, pPixmap, randr);
++        logged_add = TRUE;
++    }
+     DamageRegister(&pPixmap->drawable, pBuf->pDamage);
+     return TRUE;
+ }
+diff --git a/os/WaitFor.c b/os/WaitFor.c
+index d03670f7d..5a269268c 100644
+--- a/os/WaitFor.c
++++ b/os/WaitFor.c
+@@ -169,6 +169,7 @@ WaitForSomething(Bool are_ready)
+     int timeout;
+     int pollerr;
+     static Bool were_ready;
++    static Bool logged_wait = FALSE;
+     Bool timer_is_running;
+ 
+     timer_is_running = were_ready;
+@@ -198,6 +199,10 @@ WaitForSomething(Bool are_ready)
+         if (are_ready)
+             timeout = 0;
+ 
++        if (!logged_wait) {
++            ErrorF("wait: before BlockHandler ready=%d timeout=%d\n", are_ready, timeout);
++            logged_wait = TRUE;
++        }
+         BlockHandler(&timeout);
+         if (NewOutputPending)
+             FlushAllOutput();
 diff --git a/os/access.c b/os/access.c
 index bf8e96162..03958ed4e 100644
 --- a/os/access.c
@@ -345,6 +512,19 @@ index bf8e96162..03958ed4e 100644
  #include <sys/utsname.h>
  #endif
  #if defined(SYSV) &&  defined(__i386__)
+diff --git a/os/connection.c b/os/connection.c
+index 544d05723..44f5110b4 100644
+--- a/os/connection.c
++++ b/os/connection.c
+@@ -683,6 +683,8 @@ EstablishNewConnections(int curconn, int ready, void *data)
+         return;
+ 
+     newconn = _XSERVTransGetConnectionNumber(new_trans_conn);
++    ErrorF("conn: accepted listen_fd=%d new_fd=%d status=%d\n",
++           curconn, newconn, status);
+ 
+     _XSERVTransSetOption(new_trans_conn, TRANS_NONBLOCKING, 1);
+ 
 diff --git a/os/utils.c b/os/utils.c
 index f0d022fba..677c5811e 100644
 --- a/os/utils.c
