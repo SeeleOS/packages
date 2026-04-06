@@ -83,6 +83,29 @@ index 5695e71ac..96c2d151f 100644
  #undef HAS_UTSNAME
  #if !defined(WIN32)
  #define HAS_UTSNAME 1
+diff --git a/hw/xfree86/os-support/xf86_OSlib.h b/hw/xfree86/os-support/xf86_OSlib.h
+index 159c8064c..3cc69de59 100644
+--- a/hw/xfree86/os-support/xf86_OSlib.h
++++ b/hw/xfree86/os-support/xf86_OSlib.h
+@@ -176,7 +176,7 @@ extern _X_HIDDEN char xf86SolarisFbDev[PATH_MAX];
+ /**************************************************************************/
+ /* Linux or Glibc-based system                                            */
+ /**************************************************************************/
+-#if defined(__linux__) || defined(__GLIBC__) || defined(__CYGWIN__)
++#if defined(__linux__) || defined(__GLIBC__) || defined(__CYGWIN__) || defined(__seele__)
+ #include <sys/ioctl.h>
+ #include <signal.h>
+ #include <stdlib.h>
+@@ -193,7 +193,7 @@ extern _X_HIDDEN char xf86SolarisFbDev[PATH_MAX];
+ #include <sys/stat.h>
+ 
+ #include <sys/mman.h>
+-#ifdef __linux__
++#if defined(__linux__) || defined(__seele__)
+ #define HAS_USL_VTS
+ #include <sys/kd.h>
+ #include <sys/vt.h>
+
 diff --git a/hw/xfree86/fbdevhw/fbdevhw.c b/hw/xfree86/fbdevhw/fbdevhw.c
 index 9c30f00cc..17dfafc0e 100644
 --- a/hw/xfree86/fbdevhw/fbdevhw.c

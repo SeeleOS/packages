@@ -1,0 +1,13 @@
+diff --git a/configure b/configure
+index 4d64276..3c5d0d9 100755
+--- a/configure
++++ b/configure
+@@ -18382,7 +18382,7 @@ inputdir=${moduledir}/input
+ 
+ # The keyboard driver code is O/S specific
+ case $host_os in
+-  linux*)
++  linux* | seele*)
+     IS_LINUX="yes"
+     ;;
+ 

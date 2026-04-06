@@ -43,8 +43,6 @@ make_autotools_packages!(
     { XorgFontUtil, "xorg-font-util", tarball_url = "https://www.x.org/archive/individual/font/font-util-1.4.1.tar.xz", dependencies = [XorgUtilMacros] },
     { XorgTwm, "xorg-twm", tarball_url = "https://www.x.org/pub/individual/app/twm-1.0.13.1.tar.xz", dependencies = [LibXmu] },
     { XorgUtilMacros, "xorg-util-macros", tarball_url = "https://www.x.org/archive/individual/util/util-macros-1.20.2.tar.gz" },
-    { Xf86InputKeyboard, "xf86-input-keyboard", tarball_url = "https://www.x.org/archive/individual/driver/xf86-input-keyboard-1.9.0.tar.gz", dependencies = [XorgServer] },
-    { Xf86InputMouse, "xf86-input-mouse", tarball_url = "https://www.x.org/archive/individual/driver/xf86-input-mouse-1.9.3.tar.gz", dependencies = [XorgServer] },
     { XorgXauth, "xorg-xauth", tarball_url = "https://www.x.org/releases/individual/app/xauth-1.1.5.tar.xz", dependencies = [LibXmu, LibXau, LibXext, LibX11] },
     { XorgXinit, "xorg-xinit", tarball_url = "https://www.x.org/releases/individual/app/xinit-1.4.4.tar.xz", dependencies = [LibX11, XorgXauth, XorgXmodmap, XorgXrdb] },
     { XorgXkbcomp, "xorg-xkbcomp", tarball_url = "https://www.x.org/archive/individual/app/xkbcomp-1.5.0.tar.gz", dependencies = [LibXkbfile, LibX11] },
@@ -58,6 +56,88 @@ make_package!(
     Xf86VideoFbdev,
     "xf86-video-fbdev",
     tarball_url = "https://www.x.org/archive/individual/driver/xf86-video-fbdev-0.5.1.tar.gz",
+    dependencies = [XorgServer, Pixman],
+    package_impl = {
+        fn configure(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
+            let pixman_include = ctx.include_root_dir.join("pixman-1");
+            let pixman_flags = format!("-I{}", pixman_include.display());
+            configure_autotools(
+                self,
+                ctx,
+                vec![
+                    ("CPPFLAGS".to_string(), pixman_flags.clone()),
+                    ("CFLAGS".to_string(), pixman_flags),
+                ],
+                Vec::new(),
+                Vec::new(),
+            )
+        }
+
+        fn build(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
+            let pixman_include = ctx.include_root_dir.join("pixman-1");
+            let pixman_flags = format!("-I{}", pixman_include.display());
+            build_autotools_with(
+                self,
+                ctx,
+                vec![
+                    ("CPPFLAGS".to_string(), pixman_flags.clone()),
+                    ("CFLAGS".to_string(), pixman_flags),
+                ],
+                Vec::new(),
+            )
+        }
+
+        fn install(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
+            install_autotools(self, ctx)
+        }
+    }
+);
+
+make_package!(
+    Xf86InputKeyboard,
+    "xf86-input-keyboard",
+    tarball_url = "https://www.x.org/archive/individual/driver/xf86-input-keyboard-1.9.0.tar.gz",
+    dependencies = [XorgServer, Pixman],
+    package_impl = {
+        fn configure(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
+            let pixman_include = ctx.include_root_dir.join("pixman-1");
+            let pixman_flags = format!("-I{}", pixman_include.display());
+            configure_autotools(
+                self,
+                ctx,
+                vec![
+                    ("CPPFLAGS".to_string(), pixman_flags.clone()),
+                    ("CFLAGS".to_string(), pixman_flags),
+                ],
+                Vec::new(),
+                Vec::new(),
+            )
+        }
+
+        fn build(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
+            let pixman_include = ctx.include_root_dir.join("pixman-1");
+            let pixman_flags = format!("-I{}", pixman_include.display());
+            build_autotools_with(
+                self,
+                ctx,
+                vec![
+                    ("CPPFLAGS".to_string(), pixman_flags.clone()),
+                    ("CFLAGS".to_string(), pixman_flags),
+                ],
+                Vec::new(),
+            )
+        }
+
+        fn install(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
+            install_autotools(self, ctx)
+        }
+    }
+);
+
+make_package!(
+    Xf86InputMouse,
+    "xf86-input-mouse",
+    tarball_url = "https://www.x.org/archive/individual/driver/xf86-input-mouse-1.9.3.tar.gz",
     dependencies = [XorgServer, Pixman],
     package_impl = {
         fn configure(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {

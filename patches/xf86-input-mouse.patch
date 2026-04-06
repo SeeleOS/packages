@@ -1,0 +1,13 @@
+diff --git a/configure b/configure
+index d44640c..48a030b 100755
+--- a/configure
++++ b/configure
+@@ -18705,7 +18705,7 @@ fi
+ 
+ # Work out which OS mouse driver we need to build
+ case $host_os in
+-  linux*)
++  linux* | seele*)
+     OS_MOUSE_NAME=lnx
+     ;;
+   freebsd*|kfreebsd*-gnu|dragonfly*|netbsd*|openbsd*)
