@@ -1,7 +1,7 @@
 use crate::{
     command::{run, CommandSpec},
     fs_utils::{copy_dir_contents, copy_file, ensure_dir, verify_same_size},
-    misc::{deployed_sysroot_dir, mount_sysroot, sysroot_dir, walk_files},
+    misc::{deployed_sysroot_dir, mount_sysroot, sysroot_dir, umount_sysroot, walk_files},
     r#trait::Package,
     types::{Context, Result},
 };
@@ -109,7 +109,8 @@ pub fn deploy_sysroot(ctx: &Context) -> Result<()> {
         .arg("-a")
         .arg(staging.join("."))
         .arg(&deployed))?;
-    run(CommandSpec::new("sync"))
+    run(CommandSpec::new("sync"))?;
+    umount_sysroot()
 }
 
 fn prune_libtool_archives(root: &std::path::Path) -> Result<()> {

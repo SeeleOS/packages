@@ -52,6 +52,17 @@ pub fn mount_sysroot() -> Result<()> {
         .arg(&sysroot))
 }
 
+pub fn umount_sysroot() -> Result<()> {
+    let project_root = discover_project_root()?;
+    let sysroot = project_root.join("sysroot");
+
+    if capture(CommandSpec::new("mountpoint").arg("-q").arg(&sysroot)).is_err() {
+        return Ok(());
+    }
+
+    run(CommandSpec::new("sudo").arg("umount").arg(&sysroot))
+}
+
 pub fn sysroot_dir(ctx: &Context) -> Result<PathBuf> {
     Ok(ctx.staging_sysroot_dir.clone())
 }
