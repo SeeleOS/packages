@@ -26,16 +26,3 @@ index 8448668..2fee3ef 100644
  	done
  
  uninstall-local:
-
---- a/src/xcb_util.c
-+++ b/src/xcb_util.c
-@@ -483,9 +483,9 @@
-         setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &val, sizeof(int));
-     }
-     if(connect(fd, (struct sockaddr *) &addr, sizeof(addr)) == -1) {
-         close(fd);
-         return -1;
-     }
-     return fd;
- }
- #endif /* !_WIN32 */
