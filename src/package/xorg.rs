@@ -18,9 +18,13 @@ use crate::make_package;
 use crate::misc::sysroot_dir;
 
 fn xorg_server_install_hook(ctx: &crate::types::Context) -> crate::types::Result<()> {
+    let sysroot = sysroot_dir(ctx)?;
     let source = ctx.packages_root.join("xorg-server/xorg.conf");
-    let target = sysroot_dir(ctx)?.join("etc/X11/xorg.conf");
-    copy_file(&source, &target)
+    let target = sysroot.join("etc/X11/xorg.conf");
+    copy_file(&source, &target)?;
+
+    // Xorg runs xkbcomp and stores compiled keymaps here at runtime.
+    ensure_dir(&sysroot.join("var/lib/xkb"))
 }
 
 fn xorg_xinit_install_hook(ctx: &crate::types::Context) -> crate::types::Result<()> {
