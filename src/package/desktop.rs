@@ -19,6 +19,35 @@ use crate::package::xorg::{
     XorgProto, Zlib,
 };
 
+fn rewrite_openbox_script(sysroot: &std::path::Path, rel: &str) -> crate::types::Result<()> {
+    let path = sysroot.join(rel.trim_start_matches('/'));
+    if !path.is_file() {
+        return Ok(());
+    }
+
+    let content = fs::read_to_string(&path)?;
+    let content = content
+        .replace("#!/bin/sh", "#!/programs/bash")
+        .replace("\n    sh ", "\n    /programs/bash ")
+        .replace("\n    sh\t", "\n    /programs/bash\t")
+        .replace("\n    sh$", "\n    /programs/bash$");
+    fs::write(path, content)?;
+    Ok(())
+}
+
+fn openbox_install_hook(ctx: &crate::types::Context) -> crate::types::Result<()> {
+    let sysroot = sysroot_dir(ctx)?;
+    for rel in [
+        "/programs/openbox-session",
+        "/programs/openbox-gnome-session",
+        "/programs/openbox-kde-session",
+        "/libexec/openbox-autostart",
+    ] {
+        rewrite_openbox_script(&sysroot, rel)?;
+    }
+    Ok(())
+}
+
 make_package!(
     Expat,
     "expat",
@@ -98,7 +127,37 @@ make_autotools_packages!(
     { LibXft, "libxft", tarball_url = "https://www.x.org/archive/individual/lib/libXft-2.3.9.tar.xz", dependencies = [XorgProto, LibX11, LibXrender, Freetype2, Fontconfig] },
     { LibXcursor, "libxcursor", tarball_url = "https://www.x.org/archive/individual/lib/libXcursor-1.2.3.tar.xz", dependencies = [XorgProto, LibX11, LibXfixes, LibXrender] },
     { LibXml2, "libxml2", tarball_url = "https://download.gnome.org/sources/libxml2/2.14/libxml2-2.14.6.tar.xz", dependencies = [Zlib], configure = { args = vec!["--without-python".to_string(), "--without-lzma".to_string(), "--without-iconv".to_string()] } },
-    { Openbox, "openbox", tarball_url = "https://openbox.org/dist/openbox/openbox-3.6.1.tar.gz", dependencies = [Glib2, Pango, LibXml2, LibXft, LibXcursor, LibXinerama, LibXrandr, LibSm, LibXext, LibX11], configure = { args = vec!["--disable-imlib2".to_string(), "--disable-startup-notification".to_string(), "--disable-nls".to_string()] } },
+);
+
+make_package!(
+    Openbox,
+    "openbox",
+    tarball_url = "https://openbox.org/dist/openbox/openbox-3.6.1.tar.gz",
+    dependencies = [Glib2, Pango, LibXml2, LibXft, LibXcursor, LibXinerama, LibXrandr, LibSm, LibXext, LibX11],
+    package_impl = {
+        fn configure(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
+            configure_autotools(
+                self,
+                ctx,
+                Vec::new(),
+                vec![
+                    "--disable-imlib2".to_string(),
+                    "--disable-startup-notification".to_string(),
+                    "--disable-nls".to_string(),
+                ],
+                Vec::new(),
+            )
+        }
+
+        fn build(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
+            build_autotools_with(self, ctx, Vec::new(), Vec::new())
+        }
+
+        fn install(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
+            install_autotools(self, ctx)?;
+            openbox_install_hook(ctx)
+        }
+    }
 );
 
 make_meson_packages!(
