@@ -23,6 +23,17 @@ fn xorg_server_install_hook(ctx: &crate::types::Context) -> crate::types::Result
     copy_file(&source, &target)
 }
 
+fn xorg_xinit_install_hook(ctx: &crate::types::Context) -> crate::types::Result<()> {
+    let sysroot = sysroot_dir(ctx)?;
+    let xinitrc_source = ctx.packages_root.join("xorg-xinit/.xinitrc");
+    let xinitrc_target = sysroot.join("home/.xinitrc");
+    copy_file(&xinitrc_source, &xinitrc_target)?;
+
+    let xserverrc_source = ctx.packages_root.join("xorg-xinit/.xserverrc");
+    let xserverrc_target = sysroot.join("home/.xserverrc");
+    copy_file(&xserverrc_source, &xserverrc_target)
+}
+
 make_autotools_packages!(
     { LibFontenc, "libfontenc", tarball_url = "https://www.x.org/archive/individual/lib/libfontenc-1.1.9.tar.gz", dependencies = [XorgProto, Zlib] },
     { LibIce, "libice", tarball_url = "https://www.x.org/archive/individual/lib/libICE-1.1.2.tar.gz", dependencies = [XorgProto, Xtrans] },
@@ -47,12 +58,32 @@ make_autotools_packages!(
     { XorgTwm, "xorg-twm", tarball_url = "https://www.x.org/pub/individual/app/twm-1.0.13.1.tar.xz", dependencies = [LibXmu] },
     { XorgUtilMacros, "xorg-util-macros", tarball_url = "https://www.x.org/archive/individual/util/util-macros-1.20.2.tar.gz" },
     { XorgXauth, "xorg-xauth", tarball_url = "https://www.x.org/releases/individual/app/xauth-1.1.5.tar.xz", dependencies = [LibXmu, LibXau, LibXext, LibX11] },
-    { XorgXinit, "xorg-xinit", tarball_url = "https://www.x.org/releases/individual/app/xinit-1.4.4.tar.xz", dependencies = [LibX11, XorgXauth, XorgXmodmap, XorgXrdb] },
     { XorgXkbcomp, "xorg-xkbcomp", tarball_url = "https://www.x.org/archive/individual/app/xkbcomp-1.5.0.tar.gz", dependencies = [LibXkbfile, LibX11] },
     { XorgXmodmap, "xorg-xmodmap", tarball_url = "https://www.x.org/releases/individual/app/xmodmap-1.0.11.tar.xz", dependencies = [LibX11] },
     { XorgXrdb, "xorg-xrdb", tarball_url = "https://www.x.org/releases/individual/app/xrdb-1.2.2.tar.xz", dependencies = [LibX11, LibXmu] },
     { XorgXclock, "xorg-xclock", tarball_url = "https://www.x.org/releases/individual/app/xclock-1.1.1.tar.xz", dependencies = [LibX11, LibXrender, LibXaw], configure = { args = vec!["--with-xft=no".to_string()] } },
     { Xtrans, "xtrans", tarball_url = "https://www.x.org/archive/individual/lib/xtrans-1.6.0.tar.gz", dependencies = [XorgUtilMacros] },
+);
+
+make_package!(
+    XorgXinit,
+    "xorg-xinit",
+    tarball_url = "https://www.x.org/releases/individual/app/xinit-1.4.4.tar.xz",
+    dependencies = [LibX11, XorgXauth, XorgXmodmap, XorgXrdb],
+    package_impl = {
+        fn configure(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
+            configure_autotools(self, ctx, Vec::new(), Vec::new(), Vec::new())
+        }
+
+        fn build(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
+            build_autotools_with(self, ctx, Vec::new(), Vec::new())
+        }
+
+        fn install(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
+            install_autotools(self, ctx)?;
+            xorg_xinit_install_hook(ctx)
+        }
+    }
 );
 
 make_package!(

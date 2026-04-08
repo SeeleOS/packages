@@ -1,0 +1,2 @@
+#!/bin/sh
+exec /programs/X "$@" -dumbSched -modulepath /libs/lib_binaries/xorg/modules -retro
