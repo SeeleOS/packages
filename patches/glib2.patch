@@ -1,0 +1,286 @@
+diff --git a/gio/gnetworking.h.in b/gio/gnetworking.h.in
+index 3dddd90..d428f9a 100644
+--- a/gio/gnetworking.h.in
++++ b/gio/gnetworking.h.in
+@@ -40,14 +40,18 @@
+ #include <netdb.h>
+ #include <netinet/in.h>
+ #include <netinet/tcp.h>
++#ifndef __seele__
+ #include <resolv.h>
++#endif
+ #include <sys/socket.h>
+ #include <sys/un.h>
+ #include <net/if.h>
+ 
+ #include <arpa/inet.h>
++#ifndef __seele__
+ #include <arpa/nameser.h>
+ @NAMESER_COMPAT_INCLUDE@
++#endif
+ 
+ #ifndef __GI_SCANNER__
+ 
+diff --git a/gio/gthreadedresolver.c b/gio/gthreadedresolver.c
+index 19c1f2f..1a062e4 100644
+--- a/gio/gthreadedresolver.c
++++ b/gio/gthreadedresolver.c
+@@ -580,7 +580,7 @@ lookup_by_address_finish (GResolver     *resolver,
+ }
+ 
+ 
+-#if defined(G_OS_UNIX)
++#if defined(G_OS_UNIX) && !defined(__seele__)
+ 
+ #if defined __BIONIC__ && !defined BIND_4_COMPAT
+ /* Copy from bionic/libc/private/arpa_nameser_compat.h
+@@ -1258,7 +1258,7 @@ free_records (GList *records)
+   g_list_free_full (records, (GDestroyNotify) g_variant_unref);
+ }
+ 
+-#if defined(G_OS_UNIX)
++#if defined(G_OS_UNIX) && !defined(__seele__)
+ #ifdef __BIONIC__
+ #ifndef C_IN
+ #define C_IN 1
+@@ -1275,7 +1275,7 @@ do_lookup_records (const gchar          *rrname,
+ {
+   GList *records;
+ 
+-#if defined(G_OS_UNIX)
++#if defined(G_OS_UNIX) && !defined(__seele__)
+   gint len = 512;
+   gint herr;
+   GByteArray *answer;
+@@ -1340,6 +1340,10 @@ do_lookup_records (const gchar          *rrname,
+ 
+ #endif  /* HAVE_RES_NQUERY */
+ 
++#elif defined(G_OS_UNIX)
++  g_set_error (error, G_RESOLVER_ERROR, G_RESOLVER_ERROR_INTERNAL,
++               _("DNS record lookups are not supported on this platform"));
++  records = NULL;
+ #else
+ 
+   DNS_STATUS status;
+diff --git a/gio/gunixmounts.c b/gio/gunixmounts.c
+index c024722..1ef54de 100644
+--- a/gio/gunixmounts.c
++++ b/gio/gunixmounts.c
+@@ -1143,6 +1143,34 @@ _g_get_unix_mounts (void)
+   return NULL;
+ }
+ 
++/* Seele {{{2 */
++#elif defined(__seele__)
++
++static const char *
++get_mtab_monitor_file (void)
++{
++  return NULL;
++}
++
++static GUnixMountEntry **
++_g_unix_mounts_get_from_file (const char *table_path,
++                              uint64_t   *time_read_out,
++                              size_t     *n_entries_out)
++{
++  if (time_read_out != NULL)
++    *time_read_out = 0;
++  if (n_entries_out != NULL)
++    *n_entries_out = 0;
++
++  return NULL;
++}
++
++static GList *
++_g_get_unix_mounts (void)
++{
++  return NULL;
++}
++
+ /* Common code {{{2 */
+ #else
+ #error No _g_get_unix_mounts() implementation for system
+@@ -1757,6 +1785,27 @@ _g_unix_mount_points_get_from_file (const char *table_path,
+   return NULL;
+ }
+ 
++/* Seele {{{2 */
++#elif defined(__seele__)
++
++static GUnixMountPoint **
++_g_unix_mount_points_get_from_file (const char *table_path,
++                                    uint64_t   *time_read_out,
++                                    size_t     *n_points_out)
++{
++  if (time_read_out != NULL)
++    *time_read_out = 0;
++  if (n_points_out != NULL)
++    *n_points_out = 0;
++  return NULL;
++}
++
++static GList *
++_g_get_unix_mount_points (void)
++{
++  return NULL;
++}
++
+ /* Common code {{{2 */
+ #else
+ #error No g_get_mount_table() implementation for system
+diff --git a/gio/meson.build b/gio/meson.build
+index 854b95a..ffe8119 100644
+--- a/gio/meson.build
++++ b/gio/meson.build
+@@ -17,10 +17,11 @@ gio_includedir = glib_includedir / 'gio'
+ gnetworking_h_conf = configuration_data()
+ 
+ gnetworking_h_nameser_compat_include = ''
++is_seele = cc.get_define('__seele__', prefix : '') != ''
+ 
+-if host_system not in ['windows', 'android']
++if host_system not in ['windows', 'android'] and not is_seele
+   # Don't check for C_IN on Android since it does not define it in public
+-  # headers, we define it ourselves wherever necessary
++  # headers, and on Seele we avoid the BSD resolver API entirely.
+   if not cc.compiles('''#include <sys/types.h>
+                         #include <arpa/nameser.h>
+                         int qclass = C_IN;''',
+@@ -41,26 +42,28 @@ network_libs = [ ]
+ network_args = [ ]
+ if host_system != 'windows'
+   # res_query()
+-  res_query_test = '''#include <resolv.h>
+-                      int main (int argc, char ** argv) {
+-                        return res_query("test", 0, 0, (void *)0, 0);
+-                      }'''
+-  res_query_test_full = '''#include <sys/types.h>
+-                           #include <netinet/in.h>
+-                           #include <arpa/nameser.h>
+-                        ''' + res_query_test
+-  if not cc.links(res_query_test_full, name : 'res_query()')
+-    if cc.links(res_query_test_full, args : '-lresolv', name : 'res_query() in -lresolv')
+-      network_libs += [ cc.find_library('resolv') ]
+-      network_args += [ '-lresolv' ]
+-    elif cc.links(res_query_test, args : '-lbind', name : 'res_query() in -lbind')
+-      network_libs += [ cc.find_library('bind') ]
+-      network_args += [ '-lbind' ]
+-    elif cc.links(res_query_test, args : '-lsocket', name : 'res_query() in -lsocket')
+-      network_libs += [ cc.find_library('socket') ]
+-      network_args += [ '-lsocket' ]
+-    else
+-      error('Could not find res_query()')
++  if not is_seele
++    res_query_test = '''#include <resolv.h>
++                        int main (int argc, char ** argv) {
++                          return res_query("test", 0, 0, (void *)0, 0);
++                        }'''
++    res_query_test_full = '''#include <sys/types.h>
++                             #include <netinet/in.h>
++                             #include <arpa/nameser.h>
++                          ''' + res_query_test
++    if not cc.links(res_query_test_full, name : 'res_query()')
++      if cc.links(res_query_test_full, args : '-lresolv', name : 'res_query() in -lresolv')
++        network_libs += [ cc.find_library('resolv') ]
++        network_args += [ '-lresolv' ]
++      elif cc.links(res_query_test, args : '-lbind', name : 'res_query() in -lbind')
++        network_libs += [ cc.find_library('bind') ]
++        network_args += [ '-lbind' ]
++      elif cc.links(res_query_test, args : '-lsocket', name : 'res_query() in -lsocket')
++        network_libs += [ cc.find_library('socket') ]
++        network_args += [ '-lsocket' ]
++      else
++        error('Could not find res_query()')
++      endif
+     endif
+   endif
+ 
+@@ -80,7 +83,7 @@ if host_system != 'windows'
+   endif
+ 
+   # dn_comp()
+-  if cc.links('''#include <resolv.h>
++  if not is_seele and cc.links('''#include <resolv.h>
+                  int main (int argc, char ** argv) {
+                    return dn_comp(NULL, NULL, 0, NULL, NULL) == -1;
+                  } ''', args : network_args, name : 'dn_comp()')
+@@ -88,7 +91,7 @@ if host_system != 'windows'
+   endif
+ 
+   # res_nclose()
+-  if cc.links('''#include <sys/types.h>
++  if not is_seele and cc.links('''#include <sys/types.h>
+                  #include <netinet/in.h>
+                  #include <arpa/nameser.h>
+                  #include <resolv.h>
+@@ -101,7 +104,7 @@ if host_system != 'windows'
+   endif
+ 
+   # res_ndestroy()
+-  if cc.links('''#include <sys/types.h>
++  if not is_seele and cc.links('''#include <sys/types.h>
+                  #include <netinet/in.h>
+                  #include <arpa/nameser.h>
+                  #include <resolv.h>
+@@ -114,7 +117,7 @@ if host_system != 'windows'
+   endif
+ 
+   # res_ninit()
+-  if cc.links('''#include <sys/types.h>
++  if not is_seele and cc.links('''#include <sys/types.h>
+                  #include <netinet/in.h>
+                  #include <arpa/nameser.h>
+                  #include <resolv.h>
+@@ -126,7 +129,7 @@ if host_system != 'windows'
+   endif
+ 
+   # res_nquery()
+-  if cc.links('''#include <sys/types.h>
++  if not is_seele and cc.links('''#include <sys/types.h>
+                  #include <netinet/in.h>
+                  #include <arpa/nameser.h>
+                  #include <resolv.h>
+diff --git a/glib/meson.build b/glib/meson.build
+index 837960d..aebe6af 100644
+--- a/glib/meson.build
++++ b/glib/meson.build
+@@ -437,15 +437,20 @@ libglib_dep = declare_dependency(
+   # We sadly need to export configinc here because everyone includes <glib/*.h>
+   include_directories : [configinc, glibinc])
+ 
++pkg_bindir_for_tools = '${bindir}'
++if host_system == 'seele'
++  pkg_bindir_for_tools = '${pcfiledir}/../../../programs'
++endif
++
+ pkg.generate(libglib,
+   libraries : [libintl_deps],
+   libraries_private : [win32_ldflags],
+   subdirs : ['glib-2.0'],
+   extra_cflags : ['-I${libdir}/glib-2.0/include'] + win32_cflags,
+   variables : [
+-    'glib_genmarshal=' + '${bindir}' / 'glib-genmarshal',
+-    'gobject_query=' + '${bindir}' / 'gobject-query',
+-    'glib_mkenums=' + '${bindir}' / 'glib-mkenums',
++    'glib_genmarshal=' + pkg_bindir_for_tools / 'glib-genmarshal',
++    'gobject_query=' + pkg_bindir_for_tools / 'gobject-query',
++    'glib_mkenums=' + pkg_bindir_for_tools / 'glib-mkenums',
+     'glib_valgrind_suppressions=' + '${datadir}' /
+       valgrind_suppression_file_install_subdir /
+       fs.name(valgrind_suppression_file),
+diff --git a/meson.build b/meson.build
+index 8f3f686..e843df5 100644
+--- a/meson.build
++++ b/meson.build
+@@ -2692,8 +2692,8 @@ subdir('gthread')
+ subdir('gmodule')
+ subdir('gio')
+ subdir('girepository')
+-subdir('fuzzing')
+ if get_option('tests')
++  subdir('fuzzing')
+   subdir('tests')
+ endif
+ 

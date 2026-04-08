@@ -1,0 +1,204 @@
+diff --git a/Makefile.am b/Makefile.am
+index b4f88e5..d6f8ffd 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -24,7 +24,7 @@
+ SUBDIRS=fontconfig fc-case fc-lang src \
+ 	fc-cache fc-cat fc-conflist fc-list fc-match \
+ 	fc-pattern fc-query fc-scan fc-validate conf.d \
+-	its po po-conf test
++	its po po-conf
+ if ENABLE_DOCS
+ SUBDIRS += doc
+ endif
+diff --git a/Makefile.in b/Makefile.in
+index bfb783b..8807ad7 100644
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -475,7 +475,7 @@ top_builddir = @top_builddir@
+ top_srcdir = @top_srcdir@
+ SUBDIRS = fontconfig fc-case fc-lang src fc-cache fc-cat fc-conflist \
+ 	fc-list fc-match fc-pattern fc-query fc-scan fc-validate \
+-	conf.d its po po-conf test $(am__append_1)
++	conf.d its po po-conf $(am__append_1)
+ ACLOCAL_AMFLAGS = -I m4
+ MESON_FILES = \
+ 	conf.d/link_confs.py \
+diff --git a/src/Makefile.am b/src/Makefile.am
+index 16662e7..1d28b0a 100644
+--- a/src/Makefile.am
++++ b/src/Makefile.am
+@@ -95,9 +95,7 @@ ALIAS_FILES = fcalias.h fcaliastail.h fcftalias.h fcftaliastail.h
+ BUILT_SOURCES = $(ALIAS_FILES) \
+ 	../fc-case/fccase.h \
+ 	../fc-lang/fclang.h \
+-	stamp-fcstdint \
+-	$(builddir)/fcobjshash.h \
+-	fcobjshash.gperf
++	stamp-fcstdint
+ 
+ noinst_PROGRAMS = fcarch
+ 
+@@ -106,26 +104,8 @@ noinst_PROGRAMS = fcarch
+ ../fc-lang/fclang.h:
+ 	cd ../fc-lang && $(MAKE) $(AM_MAKEFLAGS) fclang.h
+ 
+-fcobjshash.gperf: Makefile stamp-fcobjshash.gperf
+-	-@$(RM) stamp-fcobjshash.gperf
+-	@$(MAKE) stamp-fcobjshash.gperf
+-	@touch -r stamp-fcobjshash.gperf $@
+-stamp-fcobjshash.gperf: fcobjshash.gperf.h fcobjs.h
+-	$(AM_V_GEN) $(CPP) -I$(top_builddir) -I$(top_srcdir) $(CPPFLAGS) $< | \
+-	$(SED) 's/^ *//;s/ *, */,/' | \
+-	awk ' \
+-		/CUT_OUT_BEGIN/ { no_write=1; next; }; \
+-		/CUT_OUT_END/ { no_write=0; next; }; \
+-		/^$$/||/^#/ { next; }; \
+-		{ if (!no_write) print; next; }; \
+-	' - > $@.tmp && \
+-	mv -f $@.tmp fcobjshash.gperf && touch $@ || ( $(RM) $@.tmp && false )
+-
+-$(builddir)/fcobjshash.h: Makefile fcobjshash.gperf
+-	$(AM_V_GEN) $(GPERF) --pic -m 100 fcobjshash.gperf > $@.tmp && \
+-	mv -f $@.tmp $@ || ( $(RM) $@.tmp && false )
+-
+ EXTRA_DIST += \
++	fcobjshash.gperf \
+ 	fcobjshash.gperf.h
+ 
+ libfontconfig_la_SOURCES = \
+diff --git a/src/Makefile.in b/src/Makefile.in
+index 0caad29..a1c9f99 100644
+--- a/src/Makefile.in
++++ b/src/Makefile.in
+@@ -493,9 +493,7 @@ ALIAS_FILES = fcalias.h fcaliastail.h fcftalias.h fcftaliastail.h
+ BUILT_SOURCES = $(ALIAS_FILES) \
+ 	../fc-case/fccase.h \
+ 	../fc-lang/fclang.h \
+-	stamp-fcstdint \
+-	$(builddir)/fcobjshash.h \
+-	fcobjshash.gperf
++	stamp-fcstdint
+ 
+ libfontconfig_la_SOURCES = \
+ 	fcarch.h \
+@@ -1013,25 +1011,6 @@ uninstall-am: uninstall-libLTLIBRARIES uninstall-local
+ ../fc-lang/fclang.h:
+ 	cd ../fc-lang && $(MAKE) $(AM_MAKEFLAGS) fclang.h
+ 
+-fcobjshash.gperf: Makefile stamp-fcobjshash.gperf
+-	-@$(RM) stamp-fcobjshash.gperf
+-	@$(MAKE) stamp-fcobjshash.gperf
+-	@touch -r stamp-fcobjshash.gperf $@
+-stamp-fcobjshash.gperf: fcobjshash.gperf.h fcobjs.h
+-	$(AM_V_GEN) $(CPP) -I$(top_builddir) -I$(top_srcdir) $(CPPFLAGS) $< | \
+-	$(SED) 's/^ *//;s/ *, */,/' | \
+-	awk ' \
+-		/CUT_OUT_BEGIN/ { no_write=1; next; }; \
+-		/CUT_OUT_END/ { no_write=0; next; }; \
+-		/^$$/||/^#/ { next; }; \
+-		{ if (!no_write) print; next; }; \
+-	' - > $@.tmp && \
+-	mv -f $@.tmp fcobjshash.gperf && touch $@ || ( $(RM) $@.tmp && false )
+-
+-$(builddir)/fcobjshash.h: Makefile fcobjshash.gperf
+-	$(AM_V_GEN) $(GPERF) --pic -m 100 fcobjshash.gperf > $@.tmp && \
+-	mv -f $@.tmp $@ || ( $(RM) $@.tmp && false )
+-
+ @ENABLE_SHARED_TRUE@install-data-local: install-ms-import-lib install-libtool-import-lib
+ 
+ @ENABLE_SHARED_TRUE@uninstall-local: uninstall-ms-import-lib uninstall-libtool-import-lib
+diff --git a/src/fcobjs.c b/src/fcobjs.c
+index c7bcb0c..55ba1c9 100644
+--- a/src/fcobjs.c
++++ b/src/fcobjs.c
+@@ -23,16 +23,84 @@
+  */
+ 
+ #include "fcint.h"
++#include <string.h>
+ 
+-static unsigned int
+-FcObjectTypeHash (register const char *str, register FC_GPERF_SIZE_T len);
++struct FcObjectTypeInfo {
++    const char *name;
++    int         id;
++};
++
++static const struct FcObjectTypeInfo fc_object_types[] = {
++    {"family", FC_FAMILY_OBJECT},
++    {"familylang", FC_FAMILYLANG_OBJECT},
++    {"style", FC_STYLE_OBJECT},
++    {"stylelang", FC_STYLELANG_OBJECT},
++    {"fullname", FC_FULLNAME_OBJECT},
++    {"fullnamelang", FC_FULLNAMELANG_OBJECT},
++    {"slant", FC_SLANT_OBJECT},
++    {"weight", FC_WEIGHT_OBJECT},
++    {"width", FC_WIDTH_OBJECT},
++    {"size", FC_SIZE_OBJECT},
++    {"aspect", FC_ASPECT_OBJECT},
++    {"pixelsize", FC_PIXEL_SIZE_OBJECT},
++    {"spacing", FC_SPACING_OBJECT},
++    {"foundry", FC_FOUNDRY_OBJECT},
++    {"antialias", FC_ANTIALIAS_OBJECT},
++    {"hintstyle", FC_HINT_STYLE_OBJECT},
++    {"hinting", FC_HINTING_OBJECT},
++    {"verticallayout", FC_VERTICAL_LAYOUT_OBJECT},
++    {"autohint", FC_AUTOHINT_OBJECT},
++    {"globaladvance", FC_GLOBAL_ADVANCE_OBJECT},
++    {"file", FC_FILE_OBJECT},
++    {"index", FC_INDEX_OBJECT},
++    {"rasterizer", FC_RASTERIZER_OBJECT},
++    {"outline", FC_OUTLINE_OBJECT},
++    {"scalable", FC_SCALABLE_OBJECT},
++    {"dpi", FC_DPI_OBJECT},
++    {"rgba", FC_RGBA_OBJECT},
++    {"scale", FC_SCALE_OBJECT},
++    {"minspace", FC_MINSPACE_OBJECT},
++    {"charwidth", FC_CHARWIDTH_OBJECT},
++    {"charheight", FC_CHAR_HEIGHT_OBJECT},
++    {"matrix", FC_MATRIX_OBJECT},
++    {"charset", FC_CHARSET_OBJECT},
++    {"lang", FC_LANG_OBJECT},
++    {"fontversion", FC_FONTVERSION_OBJECT},
++    {"capability", FC_CAPABILITY_OBJECT},
++    {"fontformat", FC_FONTFORMAT_OBJECT},
++    {"embolden", FC_EMBOLDEN_OBJECT},
++    {"embeddedbitmap", FC_EMBEDDED_BITMAP_OBJECT},
++    {"decorative", FC_DECORATIVE_OBJECT},
++    {"lcdfilter", FC_LCD_FILTER_OBJECT},
++    {"namelang", FC_NAMELANG_OBJECT},
++    {"fontfeatures", FC_FONT_FEATURES_OBJECT},
++    {"prgname", FC_PRGNAME_OBJECT},
++    {"hash", FC_HASH_OBJECT},
++    {"postscriptname", FC_POSTSCRIPT_NAME_OBJECT},
++    {"color", FC_COLOR_OBJECT},
++    {"symbol", FC_SYMBOL_OBJECT},
++    {"fontvariations", FC_FONT_VARIATIONS_OBJECT},
++    {"variable", FC_VARIABLE_OBJECT},
++    {"fonthashint", FC_FONT_HAS_HINT_OBJECT},
++    {"order", FC_ORDER_OBJECT},
++    {"desktop", FC_DESKTOP_NAME_OBJECT},
++    {"namedinstance", FC_NAMED_INSTANCE_OBJECT},
++    {"fontwrapper", FC_FONT_WRAPPER_OBJECT},
++};
+ 
+ static const struct FcObjectTypeInfo *
+-FcObjectTypeLookup (register const char *str, register FC_GPERF_SIZE_T len);
++FcObjectTypeLookup (const char *str, size_t len)
++{
++    size_t i;
+ 
+-#include "fcobjshash.h"
++    for (i = 0; i < sizeof (fc_object_types) / sizeof (fc_object_types[0]); i++) {
++        if (strlen (fc_object_types[i].name) == len &&
++            memcmp (fc_object_types[i].name, str, len) == 0)
++            return &fc_object_types[i];
++    }
+ 
+-#include <string.h>
++    return NULL;
++}
+ 
+ /* The 1000 is to leave some room for future added internal objects, such
+  * that caches from newer fontconfig can still be used with older fontconfig

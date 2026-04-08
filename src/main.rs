@@ -27,6 +27,7 @@ use r#trait::Package;
 use types::{Action, Context, Result};
 
 use crate::package::base::BasePackage;
+use crate::package::desktop;
 use crate::package::xorg;
 
 fn usage() {
@@ -44,6 +45,21 @@ fn package_by_name(name: &str) -> Option<Box<dyn Package>> {
         "tcc" | "tinycc" => Some(Box::new(TinyCc)),
         "vim" => Some(Box::new(Vim)),
         "base" => Some(Box::new(BasePackage)),
+        "openbox-stack" => Some(Box::new(desktop::OpenboxStackPackage)),
+        "expat" => Some(Box::new(desktop::Expat)),
+        "fontconfig" => Some(Box::new(desktop::Fontconfig)),
+        "fribidi" => Some(Box::new(desktop::Fribidi)),
+        "gettext" => Some(Box::new(desktop::Gettext)),
+        "glib" | "glib2" => Some(Box::new(desktop::Glib2)),
+        "harfbuzz" => Some(Box::new(desktop::Harfbuzz)),
+        "libffi" => Some(Box::new(desktop::LibFfi)),
+        "libiconv" => Some(Box::new(desktop::LibIconv)),
+        "libxcursor" => Some(Box::new(desktop::LibXcursor)),
+        "libxft" => Some(Box::new(desktop::LibXft)),
+        "libxml" | "libxml2" => Some(Box::new(desktop::LibXml2)),
+        "openbox" => Some(Box::new(desktop::Openbox)),
+        "pango" => Some(Box::new(desktop::Pango)),
+        "pcre2" => Some(Box::new(desktop::Pcre2)),
         "gui" => Some(Box::new(xorg::GuiPackage)),
         "xorg" => Some(Box::new(xorg::XorgPackage)),
         "xcb-proto" => Some(Box::new(xorg::XcbProto)),
@@ -89,6 +105,7 @@ fn package_by_name(name: &str) -> Option<Box<dyn Package>> {
         "xorg-xinit" | "xinit" => Some(Box::new(xorg::XorgXinit)),
         "xorg-xmodmap" | "xmodmap" => Some(Box::new(xorg::XorgXmodmap)),
         "xorg-xrdb" | "xrdb" => Some(Box::new(xorg::XorgXrdb)),
+        "zlib" => Some(Box::new(xorg::Zlib)),
         _ => None,
     }
 }

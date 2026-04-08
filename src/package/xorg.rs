@@ -1,8 +1,11 @@
+use std::fs;
+use std::os::unix::fs::symlink;
+
 use crate::build::{build_autotools_with, build_meson};
 use crate::command::{CommandSpec, run};
 use crate::configure::{configure_autotools, configure_meson};
 use crate::cross::{TARGET_TRIPLE, target_env};
-use crate::fs_utils::copy_file;
+use crate::fs_utils::{copy_file, ensure_dir};
 use crate::install::{install_autotools, install_meson};
 use crate::layout::{
     APPDEFAULTDIR, BINDIR, DEFAULT_FONT_PATH, INCLUDEDIR, LIB_BINARY_DIR, PREFIX, XKB_DIR,
@@ -195,11 +198,60 @@ make_package!(
         }
 
         fn build(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
-            build_autotools_with(self, ctx, Vec::new(), Vec::new())
+            build_autotools_with(self, ctx, Vec::new(), Vec::new())?;
+
+            let paths = self.calc_paths(ctx);
+            let so_name = "libz.so.1.3.1";
+            run(target_env(
+                CommandSpec::new("clang")
+                    .cwd(&paths.src)
+                    .arg("--target=x86_64-seele")
+                    .arg("-shared")
+                    .arg("-Wl,-soname,libz.so.1")
+                    .arg("-o")
+                    .arg(paths.src.join(so_name))
+                    .arg("adler32.lo")
+                    .arg("crc32.lo")
+                    .arg("deflate.lo")
+                    .arg("infback.lo")
+                    .arg("inffast.lo")
+                    .arg("inflate.lo")
+                    .arg("inftrees.lo")
+                    .arg("trees.lo")
+                    .arg("zutil.lo")
+                    .arg("compress.lo")
+                    .arg("uncompr.lo")
+                    .arg("gzclose.lo")
+                    .arg("gzlib.lo")
+                    .arg("gzread.lo")
+                    .arg("gzwrite.lo")
+                    .arg("-lc"),
+                ctx,
+            )?)
         }
 
         fn install(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
-            install_autotools(self, ctx)
+            install_autotools(self, ctx)?;
+
+            let paths = self.calc_paths(ctx);
+            let sysroot = sysroot_dir(ctx)?;
+            let target_lib_dir = sysroot.join(LIB_BINARY_DIR.trim_start_matches('/'));
+            let so_name = "libz.so.1.3.1";
+            let target_so = target_lib_dir.join(so_name);
+            let target_soname = target_lib_dir.join("libz.so.1");
+            let target_link = target_lib_dir.join("libz.so");
+
+            ensure_dir(&target_lib_dir)?;
+            copy_file(&paths.src.join(so_name), &target_so)?;
+
+            for link in [&target_soname, &target_link] {
+                if link.exists() || link.is_symlink() {
+                    fs::remove_file(link)?;
+                }
+            }
+            symlink(so_name, &target_soname)?;
+            symlink(so_name, &target_link)?;
+            Ok(())
         }
     }
 );

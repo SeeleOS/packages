@@ -1,0 +1,34 @@
+diff --git a/configure b/configure
+index 64f48cf..08833da 100755
+--- a/configure
++++ b/configure
+@@ -20292,7 +20292,7 @@ else case e in #(
+ esac
+ fi
+ 
+-  if test "${enable_shared}" = yes
++  if test "${enable_shared}" = yes || test "${host_os}" = seele-gnu
+ then :
+ 
+ if test ${AM_CPPFLAGS+y}
+@@ -24823,4 +24823,3 @@ User flags (override Automake flags on conflict):
+        CFLAGS: ${CFLAGS}
+      CXXFLAGS: ${CXXFLAGS}
+       LDFLAGS: ${LDFLAGS}" >&6;}
+-
+diff --git a/configure.ac b/configure.ac
+index 072fea4..b8676d9 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -144,7 +144,10 @@ AS_CASE(["$LD"],[*clang*],
+ 
+ EXPATCFG_COMPILER_SUPPORTS_VISIBILITY([
+   AX_APPEND_FLAG([-fvisibility=hidden],              [AM_CFLAGS])
+-  AS_IF([test "${enable_shared}" = yes],
++  dnl Seele currently ends up with enable_shared=no in libtool even though the
++  dnl package build still produces a shared object. Export the public API
++  dnl symbols anyway so downstream configure checks can link against libexpat.
++  AS_IF([test "${enable_shared}" = yes || test "${host_os}" = seele-gnu],
+         [AX_APPEND_FLAG([-DXML_ENABLE_VISIBILITY=1], [AM_CPPFLAGS])])])
+ 
+ dnl Checks for typedefs, structures, and compiler characteristics.

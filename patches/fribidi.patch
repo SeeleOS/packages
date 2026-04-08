@@ -1,0 +1,26 @@
+diff --git a/Makefile.am b/Makefile.am
+index 8c516fb..7be03c8 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -4,7 +4,7 @@
+ ACLOCAL_AMFLAGS = -I m4
+ 
+ ## The order of subdirs is important, don't change without a reason.
+-SUBDIRS = gen.tab lib bin doc test
++SUBDIRS = gen.tab lib doc
+ 
+ EXTRA_DIST = autogen.sh ChangeLog.old \
+ 	meson.build meson_options.txt bin/meson.build doc/meson.build \
+diff --git a/Makefile.in b/Makefile.in
+index eae9147..5e51179 100644
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -381,7 +381,7 @@ top_build_prefix = @top_build_prefix@
+ top_builddir = @top_builddir@
+ top_srcdir = @top_srcdir@
+ ACLOCAL_AMFLAGS = -I m4
+-SUBDIRS = gen.tab lib bin doc test
++SUBDIRS = gen.tab lib doc
+ EXTRA_DIST = autogen.sh ChangeLog.old \
+ 	meson.build meson_options.txt bin/meson.build doc/meson.build \
+ 	gen.tab/meson.build lib/meson.build test/meson.build \

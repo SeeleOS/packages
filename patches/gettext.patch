@@ -1,0 +1,39 @@
+diff --git a/gettext-runtime/intl/gnulib-lib/getlocalename_l-unsafe.c b/gettext-runtime/intl/gnulib-lib/getlocalename_l-unsafe.c
+--- a/gettext-runtime/intl/gnulib-lib/getlocalename_l-unsafe.c
++++ b/gettext-runtime/intl/gnulib-lib/getlocalename_l-unsafe.c
+@@ -678,6 +678,9 @@ getlocalename_l_unsafe (int category, locale_t locale)
+       else
+         /* It's the "C" or "POSIX" locale.  */
+         return (struct string_with_storage) { "C", STORAGE_INDEFINITE };
++#elif defined __seele__
++      const char *name = getlocalename_l (category, locale);
++      return (struct string_with_storage) { name, STORAGE_OBJECT };
+ #elif defined __ANDROID__
+       /* Android API level >= 21 */
+       struct __locale_t {
+diff --git a/gettext-runtime/gnulib-lib/getlocalename_l-unsafe.c b/gettext-runtime/gnulib-lib/getlocalename_l-unsafe.c
+--- a/gettext-runtime/gnulib-lib/getlocalename_l-unsafe.c
++++ b/gettext-runtime/gnulib-lib/getlocalename_l-unsafe.c
+@@ -678,6 +678,9 @@ getlocalename_l_unsafe (int category, locale_t locale)
+       else
+         /* It's the "C" or "POSIX" locale.  */
+         return (struct string_with_storage) { "C", STORAGE_INDEFINITE };
++#elif defined __seele__
++      const char *name = getlocalename_l (category, locale);
++      return (struct string_with_storage) { name, STORAGE_OBJECT };
+ #elif defined __ANDROID__
+       /* Android API level >= 21 */
+       struct __locale_t {
+diff --git a/gettext-tools/gnulib-lib/getlocalename_l-unsafe.c b/gettext-tools/gnulib-lib/getlocalename_l-unsafe.c
+--- a/gettext-tools/gnulib-lib/getlocalename_l-unsafe.c
++++ b/gettext-tools/gnulib-lib/getlocalename_l-unsafe.c
+@@ -678,6 +678,9 @@ getlocalename_l_unsafe (int category, locale_t locale)
+       else
+         /* It's the "C" or "POSIX" locale.  */
+         return (struct string_with_storage) { "C", STORAGE_INDEFINITE };
++#elif defined __seele__
++      const char *name = getlocalename_l (category, locale);
++      return (struct string_with_storage) { name, STORAGE_OBJECT };
+ #elif defined __ANDROID__
+       /* Android API level >= 21 */
+       struct __locale_t {

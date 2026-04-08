@@ -1,6 +1,7 @@
 pub mod base;
 pub mod bash;
 pub mod busybox;
+pub mod desktop;
 pub mod ncurses;
 pub mod tinycc;
 pub mod vim;
