@@ -30,7 +30,7 @@ make_package!(
                     "--with-normal".to_string(),
                     "--with-termlib".to_string(),
                     "--disable-db-install".to_string(),
-                    "--with-fallbacks=xterm,vt100,linux".to_string(),
+                    "--with-fallbacks=xterm,xterm-256colors,vt100,linux".to_string(),
                     "--disable-stripping".to_string(),
                     "--disable-widec".to_string(),
                 ],
