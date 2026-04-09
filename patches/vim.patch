@@ -1,0 +1,87 @@
+diff --git a/src/os_unix.c b/src/os_unix.c
+index 91bfd63d0..ccb001cf2 100644
+--- a/src/os_unix.c
++++ b/src/os_unix.c
+@@ -8841,12 +8841,14 @@ xsmp_close(void)
+ static volatile sig_atomic_t timeout_flag = FALSE;
+ static timer_t		     timer_id;
+ static int		     timer_created = FALSE;
++static struct sigaction	     prev_sigaction;
++static int		     timer_handler_active = FALSE;
+ 
+ /*
+- * Callback for when the timer expires.
++ * Handle SIGALRM for a timeout.
+  */
+     static void
+-set_flag(union sigval _unused UNUSED)
++set_flag SIGDEFARG(sigarg)
+ {
+     timeout_flag = TRUE;
+ }
+@@ -8858,15 +8860,25 @@ set_flag(union sigval _unused UNUSED)
+ stop_timeout(void)
+ {
+     static struct itimerspec disarm = {{0, 0}, {0, 0}};
++    int			    ret;
+ 
+     if (timer_created)
+     {
+-	int ret = timer_settime(timer_id, 0, &disarm, NULL);
++	ret = timer_settime(timer_id, 0, &disarm, NULL);
+ 
+ 	if (ret < 0)
+ 	    semsg(_(e_could_not_clear_timeout_str), strerror(errno));
+     }
+ 
++    if (timer_handler_active)
++    {
++	timer_handler_active = FALSE;
++	ret = sigaction(SIGALRM, &prev_sigaction, NULL);
++	if (ret < 0)
++	    semsg(_(e_could_not_reset_handler_for_timeout_str),
++							      strerror(errno));
++    }
++
+     // Clear the current timeout flag; any previous timeout should be
+     // considered _not_ triggered.
+     timeout_flag = FALSE;
+@@ -8889,22 +8901,35 @@ start_timeout(long msec)
+     struct itimerspec interval = {
+ 	    {0, 0},					// Do not repeat.
+ 	    {msec / 1000, (msec % 1000) * 1000000}};	// Timeout interval
+-    int ret;
++    struct sigaction	handle_alarm;
++    int			ret;
+ 
+     // This is really the caller's responsibility, but let's make sure the
+     // previous timer has been stopped.
+     stop_timeout();
+ 
++    ret = sigemptyset(&handle_alarm.sa_mask);
++    handle_alarm.sa_handler = set_flag;
++    handle_alarm.sa_flags = 0;
++    ret = ret == 0 ? sigaction(SIGALRM, &handle_alarm, &prev_sigaction) : ret;
++    if (ret < 0)
++    {
++	semsg(_(e_could_not_set_handler_for_timeout_str), strerror(errno));
++	return &timeout_flag;
++    }
++    timer_handler_active = TRUE;
++
+     if (!timer_created)
+     {
+ 	struct sigevent action = {0};
+ 
+-	action.sigev_notify = SIGEV_THREAD;
+-	action.sigev_notify_function = set_flag;
++	action.sigev_notify = SIGEV_SIGNAL;
++	action.sigev_signo = SIGALRM;
+ 	ret = timer_create(CLOCK_MONOTONIC, &action, &timer_id);
+ 	if (ret < 0)
+ 	{
+ 	    semsg(_(e_could_not_set_timeout_str), strerror(errno));
++	    stop_timeout();
+ 	    return &timeout_flag;
+ 	}
+ 	timer_created = TRUE;
