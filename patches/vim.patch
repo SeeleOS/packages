@@ -1,8 +1,16 @@
 diff --git a/src/os_unix.c b/src/os_unix.c
-index 91bfd63d0..ccb001cf2 100644
+index 91bfd63d0..42d9e1d44 100644
 --- a/src/os_unix.c
 +++ b/src/os_unix.c
-@@ -8841,12 +8841,14 @@ xsmp_close(void)
+@@ -8834,19 +8834,21 @@ xsmp_close(void)
+ #endif // USE_XSMP
+ 
+ #if defined(FEAT_RELTIME)
+-# if defined(PROF_NSEC)
++# if defined(PROF_NSEC) || defined(__seele__)
+ /*
+  * Implement timeout with timer_create() and timer_settime().
+  */
  static volatile sig_atomic_t timeout_flag = FALSE;
  static timer_t		     timer_id;
  static int		     timer_created = FALSE;
