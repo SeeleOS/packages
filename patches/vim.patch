@@ -1,3 +1,16 @@
+diff --git a/src/errors.h b/src/errors.h
+index d780fb420..110480b12 100644
+--- a/src/errors.h
++++ b/src/errors.h
+@@ -3308,7 +3308,7 @@ EXTERN char e_could_not_clear_timeout_str[]
+ 	INIT(= N_("E1285: Could not clear timeout: %s"));
+ EXTERN char e_could_not_set_timeout_str[]
+ 	INIT(= N_("E1286: Could not set timeout: %s"));
+-# ifndef PROF_NSEC
++# if !defined(PROF_NSEC) || defined(__seele__)
+ EXTERN char e_could_not_set_handler_for_timeout_str[]
+ 	INIT(= N_("E1287: Could not set handler for timeout: %s"));
+ EXTERN char e_could_not_reset_handler_for_timeout_str[]
 diff --git a/src/os_unix.c b/src/os_unix.c
 index 91bfd63d0..42d9e1d44 100644
 --- a/src/os_unix.c
