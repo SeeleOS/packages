@@ -75,6 +75,18 @@ pub fn install_meson(pkg: &dyn Package, ctx: &Context) -> Result<()> {
     prune_libtool_archives(&sysroot)
 }
 
+pub fn install_cmake(pkg: &dyn Package, ctx: &Context) -> Result<()> {
+    let paths = pkg.calc_paths(ctx);
+    let sysroot = sysroot_dir(ctx)?;
+    ensure_dir(&sysroot)?;
+    run(CommandSpec::new("env")
+        .arg(format!("DESTDIR={}", sysroot.display()))
+        .arg("cmake")
+        .arg("--install")
+        .arg(&paths.build))?;
+    prune_libtool_archives(&sysroot)
+}
+
 pub fn install_cargo(pkg: &dyn Package, ctx: &Context, bins: Vec<String>, profile: &str) -> Result<()> {
     let paths = pkg.calc_paths(ctx);
     let bins = if bins.is_empty() {

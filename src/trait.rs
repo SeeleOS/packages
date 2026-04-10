@@ -4,7 +4,7 @@ use std::fs;
 
 use crate::build::build_relibc;
 use crate::command::{CommandSpec, run_output};
-use crate::fs_utils::{ensure_dir, list_patch_files};
+use crate::fs_utils::ensure_dir;
 use crate::install::deploy_sysroot;
 use crate::misc::with_stamp;
 use crate::types::{Action, Context, PackagePaths, Result};

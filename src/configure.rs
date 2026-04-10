@@ -6,6 +6,7 @@ use crate::layout::{
     BINDIR, INCLUDEDIR, LIB_BINARY_DIR, LOCALSTATEDIR, PREFIX, SBINDIR, SYSCONFDIR, relative_dir,
 };
 use crate::libtool::fix_libtool_scripts;
+use crate::misc::sysroot_dir;
 use crate::r#trait::Package;
 use crate::types::{Context, Result};
 
@@ -34,6 +35,22 @@ pub fn with_meson_layout<'a>(spec: CommandSpec<'a>) -> CommandSpec<'a> {
         .arg(format!("--libdir={}", relative_dir(LIB_BINARY_DIR)))
         .arg(format!("--sysconfdir={SYSCONFDIR}"))
         .arg(format!("--localstatedir={LOCALSTATEDIR}"))
+}
+
+pub fn with_cmake_layout<'a>(spec: CommandSpec<'a>) -> CommandSpec<'a> {
+    spec.arg(format!("-DCMAKE_INSTALL_PREFIX={PREFIX}"))
+        .arg(format!("-DCMAKE_INSTALL_BINDIR={}", relative_dir(BINDIR)))
+        .arg(format!("-DCMAKE_INSTALL_SBINDIR={}", relative_dir(SBINDIR)))
+        .arg(format!(
+            "-DCMAKE_INSTALL_INCLUDEDIR={}",
+            relative_dir(INCLUDEDIR)
+        ))
+        .arg(format!(
+            "-DCMAKE_INSTALL_LIBDIR={}",
+            relative_dir(LIB_BINARY_DIR)
+        ))
+        .arg(format!("-DCMAKE_INSTALL_SYSCONFDIR={SYSCONFDIR}"))
+        .arg(format!("-DCMAKE_INSTALL_LOCALSTATEDIR={LOCALSTATEDIR}"))
 }
 
 pub fn configure_autotools(
@@ -98,6 +115,64 @@ pub fn configure_meson(
     .arg("--buildtype=release")
     .arg("--wrap-mode=nodownload")
     .arg("-Ddefault_library=shared");
+    for arg in extra_args {
+        cmd = cmd.arg(arg);
+    }
+    for arg in extra_dynamic {
+        cmd = cmd.arg(arg);
+    }
+    run(cmd)
+}
+
+pub fn configure_cmake(
+    pkg: &dyn Package,
+    ctx: &Context,
+    extra_args: Vec<String>,
+    extra_dynamic: Vec<String>,
+) -> Result<()> {
+    let paths = pkg.calc_paths(ctx);
+    let sysroot = sysroot_dir(ctx)?;
+    ensure_dir(&paths.build)?;
+    let mut cmd = with_cmake_layout(pkg_env(CommandSpec::new("cmake").cwd(&paths.root), ctx)?)
+        .arg("-S")
+        .arg(&paths.src)
+        .arg("-B")
+        .arg(&paths.build)
+        .arg("-G")
+        .arg("Ninja")
+        .arg("-DCMAKE_BUILD_TYPE=Release")
+        .arg("-DCMAKE_C_COMPILER=clang")
+        .arg("-DCMAKE_CXX_COMPILER=clang++")
+        .arg(format!(
+            "-DCMAKE_C_COMPILER_TARGET={TARGET_TRIPLE}"
+        ))
+        .arg(format!(
+            "-DCMAKE_CXX_COMPILER_TARGET={TARGET_TRIPLE}"
+        ))
+        .arg(format!("-DCMAKE_ASM_COMPILER_TARGET={TARGET_TRIPLE}"))
+        .arg(format!("-DCMAKE_SYSROOT={}", sysroot.display()))
+        .arg("-DCMAKE_POSITION_INDEPENDENT_CODE=ON")
+        .arg(format!(
+            "-DCMAKE_C_FLAGS=-fPIC -I{} -I{}",
+            ctx.include_root_dir.display(),
+            ctx.include_c_dir.display()
+        ))
+        .arg(format!(
+            "-DCMAKE_CXX_FLAGS=-fPIC -I{} -I{}",
+            ctx.include_root_dir.display(),
+            ctx.include_c_dir.display()
+        ))
+        .arg(format!(
+            "-DCMAKE_EXE_LINKER_FLAGS=-L{} -Wl,-rpath-link,{}",
+            ctx.lib_binary_dir.display(),
+            ctx.lib_binary_dir.display()
+        ))
+        .arg(format!(
+            "-DCMAKE_SHARED_LINKER_FLAGS=-L{} -Wl,-rpath-link,{}",
+            ctx.lib_binary_dir.display(),
+            ctx.lib_binary_dir.display()
+        ))
+        .arg("-DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY");
     for arg in extra_args {
         cmd = cmd.arg(arg);
     }

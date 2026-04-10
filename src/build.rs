@@ -56,6 +56,18 @@ pub fn build_meson(pkg: &dyn Package, ctx: &Context) -> Result<()> {
     )?)
 }
 
+pub fn build_cmake(pkg: &dyn Package, _ctx: &Context) -> Result<()> {
+    let paths = pkg.calc_paths(_ctx);
+    let jobs = std::thread::available_parallelism()
+        .map(|count| count.get())
+        .unwrap_or(1);
+    run(CommandSpec::new("cmake")
+        .arg("--build")
+        .arg(&paths.build)
+        .arg("--parallel")
+        .arg(jobs.to_string()))
+}
+
 pub fn build_make_in(
     cwd: &Path,
     envs: Vec<(String, String)>,
