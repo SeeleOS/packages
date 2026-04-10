@@ -1,0 +1,62 @@
+diff --git a/config.mk b/config.mk
+index 2fc854e..dfb9b1c 100644
+--- a/config.mk
++++ b/config.mk
+@@ -16,7 +16,7 @@ PKG_CONFIG = pkg-config
+ INCS = -I$(X11INC) \
+        `$(PKG_CONFIG) --cflags fontconfig` \
+        `$(PKG_CONFIG) --cflags freetype2`
+-LIBS = -L$(X11LIB) -lm -lrt -lX11 -lutil -lXft \
++LIBS = -L$(X11LIB) -lm -lrt -lX11 -lXft \
+        `$(PKG_CONFIG) --libs fontconfig` \
+        `$(PKG_CONFIG) --libs freetype2`
+ 
+diff --git a/st.c b/st.c
+index 8e57991..eec76df 100644
+--- a/st.c
++++ b/st.c
+@@ -20,7 +20,7 @@
+ #include "st.h"
+ #include "win.h"
+ 
+-#if   defined(__linux)
++#if   defined(__linux) || defined(__seele__)
+  #include <pty.h>
+ #elif defined(__OpenBSD__) || defined(__NetBSD__) || defined(__APPLE__)
+  #include <util.h>
+@@ -888,7 +888,7 @@ ttywriteraw(const char *s, size_t n)
+ 		FD_SET(cmdfd, &rfd);
+ 
+ 		/* Check if we can write. */
+-		if (pselect(cmdfd+1, &rfd, &wfd, NULL, NULL, NULL) < 0) {
++		if (select(cmdfd+1, &rfd, &wfd, NULL, NULL) < 0) {
+ 			if (errno == EINTR)
+ 				continue;
+ 			die("select failed: %s\n", strerror(errno));
+diff --git a/x.c b/x.c
+index d73152b..aad7891 100644
+--- a/x.c
++++ b/x.c
+@@ -1927,7 +1927,8 @@ run(void)
+ 	int w = win.w, h = win.h;
+ 	fd_set rfd;
+ 	int xfd = XConnectionNumber(xw.dpy), ttyfd, xev, drawing;
+-	struct timespec seltv, *tv, now, lastblink, trigger;
++	struct timeval seltv, *tv;
++	struct timespec now, lastblink, trigger;
+ 	double timeout;
+ 
+ 	/* Waiting for window mapping */
+@@ -1958,10 +1959,10 @@ run(void)
+ 			timeout = 0;  /* existing events might not set xfd */
+ 
+ 		seltv.tv_sec = timeout / 1E3;
+-		seltv.tv_nsec = 1E6 * (timeout - 1E3 * seltv.tv_sec);
++		seltv.tv_usec = 1E3 * (timeout - 1E3 * seltv.tv_sec);
+ 		tv = timeout >= 0 ? &seltv : NULL;
+ 
+-		if (pselect(MAX(xfd, ttyfd)+1, &rfd, NULL, NULL, tv, NULL) < 0) {
++		if (select(MAX(xfd, ttyfd)+1, &rfd, NULL, NULL, tv) < 0) {
+ 			if (errno == EINTR)
+ 				continue;
+ 			die("select failed: %s\n", strerror(errno));

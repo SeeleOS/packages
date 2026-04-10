@@ -4,6 +4,7 @@ pub mod busybox;
 pub mod desktop;
 pub mod misc;
 pub mod ncurses;
+pub mod st;
 pub mod tinycc;
 pub mod vim;
 pub mod xorg;

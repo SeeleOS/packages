@@ -21,6 +21,7 @@ use std::process;
 use package::bash::Bash;
 use package::busybox::Busybox;
 use package::ncurses::Ncurses;
+use package::st::St;
 use package::tinycc::TinyCc;
 use package::vim::Vim;
 use r#trait::Package;
@@ -49,6 +50,7 @@ fn package_by_name(name: &str) -> Option<Box<dyn Package>> {
         "ncurses" => Some(Box::new(Ncurses)),
         "tcc" | "tinycc" => Some(Box::new(TinyCc)),
         "fastfetch" => Some(Box::new(FastFetch)),
+        "st" => Some(Box::new(St)),
         "vim" => Some(Box::new(Vim)),
         "base" => Some(Box::new(BasePackage)),
         "openbox-stack" => Some(Box::new(desktop::OpenboxStackPackage)),
