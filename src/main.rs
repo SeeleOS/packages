@@ -28,13 +28,18 @@ use types::{Action, Context, Result};
 
 use crate::package::base::BasePackage;
 use crate::package::desktop;
+use crate::package::misc::FastFetch;
 use crate::package::xorg;
 
 fn usage() {
     eprintln!("Usage:");
-    eprintln!("  cargo run install <package> [--rebuild] [--ignore-deps]   # build and install into sysroot");
+    eprintln!(
+        "  cargo run install <package> [--rebuild] [--ignore-deps]   # build and install into sysroot"
+    );
     eprintln!("  cargo run clean <package> [--rebuild] [--ignore-deps]");
-    eprintln!("  cargo run rebuild-only <package>                          # clean package, then install with --rebuild --ignore-deps");
+    eprintln!(
+        "  cargo run rebuild-only <package>                          # clean package, then install with --rebuild --ignore-deps"
+    );
 }
 
 fn package_by_name(name: &str) -> Option<Box<dyn Package>> {
@@ -43,6 +48,7 @@ fn package_by_name(name: &str) -> Option<Box<dyn Package>> {
         "busybox" => Some(Box::new(Busybox)),
         "ncurses" => Some(Box::new(Ncurses)),
         "tcc" | "tinycc" => Some(Box::new(TinyCc)),
+        "fastfetch" => Some(Box::new(FastFetch)),
         "vim" => Some(Box::new(Vim)),
         "base" => Some(Box::new(BasePackage)),
         "openbox-stack" => Some(Box::new(desktop::OpenboxStackPackage)),
