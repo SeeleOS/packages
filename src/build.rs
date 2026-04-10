@@ -2,6 +2,8 @@ use crate::{
     command::{CommandSpec, make, run},
     configure::with_envs,
     cross::{pkg_env, target_env},
+    fs_utils::{copy_dir_contents, ensure_dir},
+    layout::LIBDIR,
     r#trait::Package,
     types::{Context, Result},
 };
@@ -11,20 +13,32 @@ pub const CC: &str = "clang --target=x86_64-seele";
 static RELIBC_INSTALLED: AtomicBool = AtomicBool::new(false);
 
 pub fn build_relibc(ctx: &Context) -> Result<()> {
-    if RELIBC_INSTALLED.load(std::sync::atomic::Ordering::Relaxed) {
-        return Ok(());
+    if !RELIBC_INSTALLED.load(std::sync::atomic::Ordering::Relaxed) {
+        RELIBC_INSTALLED.store(true, std::sync::atomic::Ordering::Relaxed);
+
+        run(make()
+            .cwd(&ctx.relibc_root)
+            .env_remove("CARGO")
+            .env_remove("CARGO_MANIFEST_DIR")
+            .env_remove("CARGO_MANIFEST_PATH")
+            .env_remove("RUSTUP_TOOLCHAIN")
+            .env_remove("RUST_RECURSION_COUNT")
+            .arg("all"))?;
     }
 
-    RELIBC_INSTALLED.store(true, std::sync::atomic::Ordering::Relaxed);
+    sync_staging_libs(ctx)
+}
 
-    run(make()
-        .cwd(&ctx.relibc_root)
-        .env_remove("CARGO")
-        .env_remove("CARGO_MANIFEST_DIR")
-        .env_remove("CARGO_MANIFEST_PATH")
-        .env_remove("RUSTUP_TOOLCHAIN")
-        .env_remove("RUST_RECURSION_COUNT")
-        .arg("all"))
+fn sync_staging_libs(ctx: &Context) -> Result<()> {
+    let src = ctx.real_sysroot_dir.join(LIBDIR.trim_start_matches('/'));
+    let dst = ctx.staging_sysroot_dir.join(LIBDIR.trim_start_matches('/'));
+
+    if !src.is_dir() {
+        return Err(format!("real sysroot libs dir not found: {}", src.display()).into());
+    }
+
+    ensure_dir(&dst)?;
+    copy_dir_contents(&src, &dst)
 }
 
 pub fn build_autotools_with(

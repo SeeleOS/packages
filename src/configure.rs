@@ -39,16 +39,10 @@ pub fn with_meson_layout<'a>(spec: CommandSpec<'a>) -> CommandSpec<'a> {
 
 pub fn with_cmake_layout<'a>(spec: CommandSpec<'a>) -> CommandSpec<'a> {
     spec.arg(format!("-DCMAKE_INSTALL_PREFIX={PREFIX}"))
-        .arg(format!("-DCMAKE_INSTALL_BINDIR={}", relative_dir(BINDIR)))
-        .arg(format!("-DCMAKE_INSTALL_SBINDIR={}", relative_dir(SBINDIR)))
-        .arg(format!(
-            "-DCMAKE_INSTALL_INCLUDEDIR={}",
-            relative_dir(INCLUDEDIR)
-        ))
-        .arg(format!(
-            "-DCMAKE_INSTALL_LIBDIR={}",
-            relative_dir(LIB_BINARY_DIR)
-        ))
+        .arg(format!("-DCMAKE_INSTALL_BINDIR={BINDIR}"))
+        .arg(format!("-DCMAKE_INSTALL_SBINDIR={SBINDIR}"))
+        .arg(format!("-DCMAKE_INSTALL_INCLUDEDIR={INCLUDEDIR}"))
+        .arg(format!("-DCMAKE_INSTALL_LIBDIR={LIB_BINARY_DIR}"))
         .arg(format!("-DCMAKE_INSTALL_SYSCONFDIR={SYSCONFDIR}"))
         .arg(format!("-DCMAKE_INSTALL_LOCALSTATEDIR={LOCALSTATEDIR}"))
 }
