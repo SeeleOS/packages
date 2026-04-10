@@ -226,6 +226,68 @@ macro_rules! make_meson_packages {
 }
 
 #[macro_export]
+macro_rules! make_cmake_package {
+    (
+        $ty:ident,
+        $name:literal,
+        $fetch_key:ident = $fetch_value:expr
+        $(, git_commit = $git_commit:expr)?
+        $(, dependencies = [$($dep:path),* $(,)?])?
+        $(, configure = { $($cfg:tt)* })?
+        $(,)?
+    ) => {
+        $crate::make_package!(
+            $ty,
+            $name,
+            $fetch_key = $fetch_value
+            $(, git_commit = $git_commit)?
+            $(, dependencies = [$($dep),*])?,
+            package_impl = {
+                fn configure(&self, ctx: &$crate::types::Context) -> $crate::types::Result<()> {
+                    $crate::configure::configure_cmake(
+                        self,
+                        ctx,
+                        $crate::make_cmake_package!(@cfg_args_from [ $($($cfg)*)? ]),
+                        ($crate::make_cmake_package!(@cfg_dynamic_args_from [ $($($cfg)*)? ]))(ctx),
+                    )
+                }
+
+                fn build(&self, ctx: &$crate::types::Context) -> $crate::types::Result<()> {
+                    $crate::build::build_cmake(self, ctx)
+                }
+
+                fn install(&self, ctx: &$crate::types::Context) -> $crate::types::Result<()> {
+                    $crate::install::install_cmake(self, ctx)
+                }
+            }
+        );
+    };
+    (@cfg_args_from [ $($items:tt)* ]) => { $crate::make_cmake_package!(@find_cfg_args [ $($items)* ]) };
+    (@find_cfg_args [ ]) => { Vec::<String>::new() };
+    (@find_cfg_args [ args = $value:expr $(, $($rest:tt)*)? ]) => { $value };
+    (@find_cfg_args [ $key:ident = $value:expr, $($rest:tt)* ]) => {
+        $crate::make_cmake_package!(@find_cfg_args [ $($rest)* ])
+    };
+    (@find_cfg_args [ $key:ident = $value:expr ]) => { Vec::<String>::new() };
+    (@cfg_dynamic_args_from [ $($items:tt)* ]) => { $crate::make_cmake_package!(@find_cfg_dynamic_args [ $($items)* ]) };
+    (@find_cfg_dynamic_args [ ]) => { |_| Vec::new() };
+    (@find_cfg_dynamic_args [ dynamic_args = $value:expr $(, $($rest:tt)*)? ]) => { $value };
+    (@find_cfg_dynamic_args [ $key:ident = $value:expr, $($rest:tt)* ]) => {
+        $crate::make_cmake_package!(@find_cfg_dynamic_args [ $($rest)* ])
+    };
+    (@find_cfg_dynamic_args [ $key:ident = $value:expr ]) => { |_| Vec::new() };
+}
+
+#[macro_export]
+macro_rules! make_cmake_packages {
+    ($({ $($inner:tt)* }),* $(,)?) => {
+        $(
+            $crate::make_cmake_package!($($inner)*);
+        )*
+    };
+}
+
+#[macro_export]
 macro_rules! make_cargo_package {
     (
         $ty:ident,
