@@ -60,6 +60,7 @@ fn package_by_name(name: &str) -> Option<Box<dyn Package>> {
         "gettext" => Some(Box::new(desktop::Gettext)),
         "glib" | "glib2" => Some(Box::new(desktop::Glib2)),
         "harfbuzz" => Some(Box::new(desktop::Harfbuzz)),
+        "liberation-fonts" | "liberation-mono" => Some(Box::new(desktop::LiberationFonts)),
         "libffi" => Some(Box::new(desktop::LibFfi)),
         "libiconv" => Some(Box::new(desktop::LibIconv)),
         "libxcursor" => Some(Box::new(desktop::LibXcursor)),

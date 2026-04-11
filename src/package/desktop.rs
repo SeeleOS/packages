@@ -7,7 +7,7 @@ use crate::configure::configure_autotools;
 use crate::cross::target_env;
 use crate::fs_utils::{copy_file, ensure_dir};
 use crate::install::install_autotools;
-use crate::layout::LIB_BINARY_DIR;
+use crate::layout::{LIB_BINARY_DIR, relative_dir};
 use crate::make_autotools_packages;
 use crate::make_meta_package;
 use crate::make_meson_packages;
@@ -117,13 +117,109 @@ make_package!(
     }
 );
 
+make_package!(
+    LiberationFonts,
+    "liberation-fonts",
+    tarball_url = "https://github.com/liberationfonts/liberation-fonts/files/7261482/liberation-fonts-ttf-2.1.5.tar.gz",
+    package_impl = {
+        fn configure(&self, _ctx: &crate::types::Context) -> crate::types::Result<()> {
+            Ok(())
+        }
+
+        fn build(&self, _ctx: &crate::types::Context) -> crate::types::Result<()> {
+            Ok(())
+        }
+
+        fn install(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
+            let paths = self.calc_paths(ctx);
+            let sysroot = sysroot_dir(ctx)?;
+            let font_dir = sysroot.join(relative_dir("/share/fonts/truetype/liberation"));
+
+            ensure_dir(&font_dir)?;
+            for entry in fs::read_dir(&paths.src)? {
+                let entry = entry?;
+                let path = entry.path();
+                if path.extension().is_some_and(|ext| ext == "ttf") {
+                    copy_file(&path, &font_dir.join(entry.file_name()))?;
+                }
+            }
+
+            Ok(())
+        }
+    }
+);
+
+make_package!(
+    Fontconfig,
+    "fontconfig",
+    tarball_url = "https://gitlab.freedesktop.org/api/v4/projects/890/packages/generic/fontconfig/2.17.1/fontconfig-2.17.1.tar.xz",
+    dependencies = [Expat, Freetype2],
+    package_impl = {
+        fn configure(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
+            configure_autotools(
+                self,
+                ctx,
+                Vec::new(),
+                vec![
+                    "--disable-docs".to_string(),
+                    "--with-expat-includes=/home/elysia/coding-project/elysia-os/packages/work/sysroot-stage/libs/include".to_string(),
+                    "--with-expat-lib=/home/elysia/coding-project/elysia-os/packages/work/sysroot-stage/libs/lib_binaries".to_string(),
+                ],
+                Vec::new(),
+            )
+        }
+
+        fn build(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
+            build_autotools_with(self, ctx, Vec::new(), Vec::new())
+        }
+
+        fn install(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
+            install_autotools(self, ctx)?;
+
+            let sysroot = sysroot_dir(ctx)?;
+            let fonts_dir = sysroot.join(relative_dir("/etc/fonts"));
+            ensure_dir(&fonts_dir)?;
+            fs::write(
+                fonts_dir.join("fonts.conf"),
+                r#"<?xml version="1.0"?>
+<!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
+<fontconfig>
+  <dir>/share/fonts</dir>
+  <dir>/share/fonts/truetype</dir>
+  <dir>/share/fonts/truetype/liberation</dir>
+
+  <cachedir>/tmp/fontconfig</cachedir>
+
+  <match target="pattern">
+    <test name="family" qual="any">
+      <string>monospace</string>
+    </test>
+    <edit name="family" mode="prepend" binding="strong">
+      <string>Liberation Mono</string>
+    </edit>
+  </match>
+
+  <alias>
+    <family>monospace</family>
+    <prefer>
+      <family>Liberation Mono</family>
+    </prefer>
+  </alias>
+</fontconfig>
+"#,
+            )?;
+
+            Ok(())
+        }
+    }
+);
+
 make_autotools_packages!(
     { Gettext, "gettext", tarball_url = "https://ftp.gnu.org/pub/gnu/gettext/gettext-0.26.tar.gz", dependencies = [LibIconv], configure = { args = vec!["--disable-java".to_string(), "--disable-csharp".to_string(), "--disable-openmp".to_string(), "--disable-native-java".to_string(), "--without-emacs".to_string(), "--without-git".to_string(), "--without-cvs".to_string(), "--without-xz".to_string(), "--without-bzip2".to_string()] } },
     { LibFfi, "libffi", tarball_url = "https://github.com/libffi/libffi/releases/download/v3.4.8/libffi-3.4.8.tar.gz", configure = { args = vec!["--disable-docs".to_string()] } },
     { LibIconv, "libiconv", tarball_url = "https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.19.tar.gz" },
     { Pcre2, "pcre2", tarball_url = "https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.46/pcre2-10.46.tar.bz2", configure = { args = vec!["--enable-pcre2-8".to_string(), "--disable-pcre2-16".to_string(), "--disable-pcre2-32".to_string(), "--disable-jit".to_string(), "--disable-pcre2grep-jit".to_string(), "--disable-pcre2grep-callout".to_string(), "--disable-pcre2grep-callout-fork".to_string()] } },
     { Fribidi, "fribidi", tarball_url = "https://github.com/fribidi/fribidi/releases/download/v1.0.16/fribidi-1.0.16.tar.xz" },
-    { Fontconfig, "fontconfig", tarball_url = "https://gitlab.freedesktop.org/api/v4/projects/890/packages/generic/fontconfig/2.17.1/fontconfig-2.17.1.tar.xz", dependencies = [Expat, Freetype2], configure = { args = vec!["--disable-docs".to_string(), "--with-expat-includes=/home/elysia/coding-project/elysia-os/packages/work/sysroot-stage/libs/include".to_string(), "--with-expat-lib=/home/elysia/coding-project/elysia-os/packages/work/sysroot-stage/libs/lib_binaries".to_string()] } },
     { LibXft, "libxft", tarball_url = "https://www.x.org/archive/individual/lib/libXft-2.3.9.tar.xz", dependencies = [XorgProto, LibX11, LibXrender, Freetype2, Fontconfig] },
     { LibXcursor, "libxcursor", tarball_url = "https://www.x.org/archive/individual/lib/libXcursor-1.2.3.tar.xz", dependencies = [XorgProto, LibX11, LibXfixes, LibXrender] },
     { LibXml2, "libxml2", tarball_url = "https://download.gnome.org/sources/libxml2/2.14/libxml2-2.14.6.tar.xz", dependencies = [Zlib], configure = { args = vec!["--without-python".to_string(), "--without-lzma".to_string(), "--without-iconv".to_string()] } },

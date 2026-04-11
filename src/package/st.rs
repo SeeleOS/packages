@@ -7,7 +7,7 @@ use crate::install::install_file;
 use crate::layout::relative_dir;
 use crate::make_package;
 use crate::misc::sysroot_dir;
-use crate::package::desktop::{Fontconfig, LibXft};
+use crate::package::desktop::{Fontconfig, LiberationFonts, LibXft};
 use crate::package::xorg::{Freetype2, LibX11};
 
 const VERSION: &str = "0.9.3";
@@ -16,7 +16,7 @@ make_package!(
     St,
     "st",
     tarball_url = "https://dl.suckless.org/st/st-0.9.3.tar.gz",
-    dependencies = [LibX11, LibXft, Fontconfig, Freetype2],
+    dependencies = [LibX11, LibXft, Fontconfig, Freetype2, LiberationFonts],
     package_impl = {
         fn configure(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
             let paths = self.calc_paths(ctx);
