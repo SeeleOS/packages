@@ -20,7 +20,7 @@ make_package!(
                     ("LIBS".to_string(), "-lncurses -ltinfo".to_string()),
                 ],
                 vec![
-                    "--with-tlib=ncurses".to_string(),
+                    "--with-tlib=tinfo".to_string(),
                     "--with-features=normal".to_string(),
                     "--enable-multibyte".to_string(),
                     "--disable-gui".to_string(),
@@ -56,7 +56,10 @@ make_package!(
             let paths = self.calc_paths(ctx);
             let source = paths.src.join("src/vim");
             let target = ctx.install_dir.join("vim");
-            let sysroot = ctx.install_dir.parent().ok_or("install_dir has no parent")?;
+            let sysroot = ctx
+                .install_dir
+                .parent()
+                .ok_or("install_dir has no parent")?;
             let runtime_source = paths.src.join("runtime");
             let runtime_target = sysroot.join("misc/vim");
 
