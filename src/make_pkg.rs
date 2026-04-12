@@ -1,4 +1,12 @@
 #[macro_export]
+macro_rules! package_phase {
+    ($body:block) => {{
+        $body
+        Ok(())
+    }};
+}
+
+#[macro_export]
 macro_rules! make_package {
     (
         $ty:ident,
@@ -83,6 +91,9 @@ macro_rules! make_autotools_package {
         $(, dependencies = [$($dep:path),* $(,)?])?
         $(, configure = { $($cfg:tt)* })?
         $(, build = { $($build:tt)* })?
+        $(, configure_override = $configure_override:block)?
+        $(, build_override = $build_override:block)?
+        $(, install_override = $install_override:block)?
         $(,)?
     ) => {
         $crate::make_package!(
@@ -93,6 +104,9 @@ macro_rules! make_autotools_package {
             $(, dependencies = [$($dep),*])?,
             package_impl = {
                 fn configure(&self, ctx: &$crate::types::Context) -> $crate::types::Result<()> {
+                    $(
+                        return $crate::package_phase!($configure_override);
+                    )?
                     $crate::configure::configure_autotools(
                         self,
                         ctx,
@@ -103,6 +117,9 @@ macro_rules! make_autotools_package {
                 }
 
                 fn build(&self, ctx: &$crate::types::Context) -> $crate::types::Result<()> {
+                    $(
+                        return $crate::package_phase!($build_override);
+                    )?
                     $crate::build::build_autotools_with(
                         self,
                         ctx,
@@ -112,6 +129,9 @@ macro_rules! make_autotools_package {
                 }
 
                 fn install(&self, ctx: &$crate::types::Context) -> $crate::types::Result<()> {
+                    $(
+                        return $crate::package_phase!($install_override);
+                    )?
                     $crate::install::install_autotools(self, ctx)
                 }
             }
@@ -172,6 +192,9 @@ macro_rules! make_meson_package {
         $(, git_commit = $git_commit:expr)?
         $(, dependencies = [$($dep:path),* $(,)?])?
         $(, configure = { $($cfg:tt)* })?
+        $(, configure_override = $configure_override:block)?
+        $(, build_override = $build_override:block)?
+        $(, install_override = $install_override:block)?
         $(,)?
     ) => {
         $crate::make_package!(
@@ -182,6 +205,9 @@ macro_rules! make_meson_package {
             $(, dependencies = [$($dep),*])?,
             package_impl = {
                 fn configure(&self, ctx: &$crate::types::Context) -> $crate::types::Result<()> {
+                    $(
+                        return $crate::package_phase!($configure_override);
+                    )?
                     $crate::configure::configure_meson(
                         self,
                         ctx,
@@ -191,10 +217,16 @@ macro_rules! make_meson_package {
                 }
 
                 fn build(&self, ctx: &$crate::types::Context) -> $crate::types::Result<()> {
+                    $(
+                        return $crate::package_phase!($build_override);
+                    )?
                     $crate::build::build_meson(self, ctx)
                 }
 
                 fn install(&self, ctx: &$crate::types::Context) -> $crate::types::Result<()> {
+                    $(
+                        return $crate::package_phase!($install_override);
+                    )?
                     $crate::install::install_meson(self, ctx)
                 }
             }
@@ -234,6 +266,9 @@ macro_rules! make_cmake_package {
         $(, git_commit = $git_commit:expr)?
         $(, dependencies = [$($dep:path),* $(,)?])?
         $(, configure = { $($cfg:tt)* })?
+        $(, configure_override = $configure_override:block)?
+        $(, build_override = $build_override:block)?
+        $(, install_override = $install_override:block)?
         $(,)?
     ) => {
         $crate::make_package!(
@@ -244,6 +279,9 @@ macro_rules! make_cmake_package {
             $(, dependencies = [$($dep),*])?,
             package_impl = {
                 fn configure(&self, ctx: &$crate::types::Context) -> $crate::types::Result<()> {
+                    $(
+                        return $crate::package_phase!($configure_override);
+                    )?
                     $crate::configure::configure_cmake(
                         self,
                         ctx,
@@ -253,10 +291,16 @@ macro_rules! make_cmake_package {
                 }
 
                 fn build(&self, ctx: &$crate::types::Context) -> $crate::types::Result<()> {
+                    $(
+                        return $crate::package_phase!($build_override);
+                    )?
                     $crate::build::build_cmake(self, ctx)
                 }
 
                 fn install(&self, ctx: &$crate::types::Context) -> $crate::types::Result<()> {
+                    $(
+                        return $crate::package_phase!($install_override);
+                    )?
                     $crate::install::install_cmake(self, ctx)
                 }
             }
@@ -297,6 +341,9 @@ macro_rules! make_cargo_package {
         $(, dependencies = [$($dep:path),* $(,)?])?
         $(, build = { $($build:tt)* })?
         $(, install = { $($install:tt)* })?
+        $(, configure_override = $configure_override:block)?
+        $(, build_override = $build_override:block)?
+        $(, install_override = $install_override:block)?
         $(,)?
     ) => {
         $crate::make_package!(
@@ -306,11 +353,17 @@ macro_rules! make_cargo_package {
             $(, git_commit = $git_commit)?
             $(, dependencies = [$($dep),*])?,
             package_impl = {
-                fn configure(&self, _ctx: &$crate::types::Context) -> $crate::types::Result<()> {
+                fn configure(&self, ctx: &$crate::types::Context) -> $crate::types::Result<()> {
+                    $(
+                        return $crate::package_phase!($configure_override);
+                    )?
                     Ok(())
                 }
 
                 fn build(&self, ctx: &$crate::types::Context) -> $crate::types::Result<()> {
+                    $(
+                        return $crate::package_phase!($build_override);
+                    )?
                     $crate::build::build_cargo_with(
                         self,
                         ctx,
@@ -320,6 +373,9 @@ macro_rules! make_cargo_package {
                 }
 
                 fn install(&self, ctx: &$crate::types::Context) -> $crate::types::Result<()> {
+                    $(
+                        return $crate::package_phase!($install_override);
+                    )?
                     $crate::install::install_cargo(
                         self,
                         ctx,

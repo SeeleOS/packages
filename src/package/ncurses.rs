@@ -1,8 +1,11 @@
 use crate::build::{CC, build_make_in};
-use crate::command::CommandSpec;
+use crate::command::{CommandSpec, run};
 use crate::configure::{configure_autotools_in, with_envs};
+use crate::fs_utils::ensure_dir;
 use crate::install::install_make_in;
+use crate::layout::relative_dir;
 use crate::make_package;
+use crate::misc::sysroot_dir;
 
 const BUILD_CC: &str = "gcc";
 
@@ -29,8 +32,10 @@ make_package!(
                     "--without-progs".to_string(),
                     "--with-normal".to_string(),
                     "--with-termlib".to_string(),
+                    "--with-terminfo-dirs=/share/terminfo".to_string(),
+                    "--with-default-terminfo-dir=/share/terminfo".to_string(),
                     "--disable-db-install".to_string(),
-                    "--with-fallbacks=xterm,xterm-256colors,vt100,linux".to_string(),
+                    "--with-fallbacks=xterm,vt100,linux".to_string(),
                     "--disable-stripping".to_string(),
                     "--disable-widec".to_string(),
                 ],
@@ -43,7 +48,17 @@ make_package!(
         }
 
         fn install(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
-            install_make_in(&self.calc_paths(ctx).build, ctx)
+            let paths = self.calc_paths(ctx);
+            let sysroot = sysroot_dir(ctx)?;
+            let terminfo_dir = sysroot.join(relative_dir("/share/terminfo"));
+
+            install_make_in(&paths.build, ctx)?;
+            ensure_dir(&terminfo_dir)?;
+            run(CommandSpec::new("tic")
+                .arg("-x")
+                .arg("-o")
+                .arg(&terminfo_dir)
+                .arg(paths.src.join("misc/terminfo.src")))
         }
     }
 );

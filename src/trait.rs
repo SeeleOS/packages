@@ -66,6 +66,7 @@ pub trait Package {
                 .join("patches")
                 .join(format!("{}.patch", self.name())),
             build: root.join("src/build"),
+            pkg_specific: ctx.pkg_specific_root.join(self.name()),
             root,
         }
     }

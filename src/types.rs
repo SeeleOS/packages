@@ -26,6 +26,7 @@ impl Action {
 #[derive(Clone, Debug)]
 pub struct Context {
     pub packages_root: PathBuf,
+    pub pkg_specific_root: PathBuf,
     pub staging_sysroot_dir: PathBuf,
     pub real_sysroot_dir: PathBuf,
     pub relibc_root: PathBuf,
@@ -42,7 +43,8 @@ pub struct Context {
 impl Context {
     pub fn discover(rebuild: bool, ignore_deps: bool) -> Result<Self> {
         let cwd = std::env::current_dir()?;
-        let packages_root = if cwd.join("README.md").is_file() && cwd.join("bash").is_dir() {
+        let packages_root = if cwd.join("README.md").is_file() && cwd.join("pkg-specific").is_dir()
+        {
             cwd
         } else if cwd.join("packages").join("README.md").is_file() {
             cwd.join("packages")
@@ -55,9 +57,11 @@ impl Context {
             .parent()
             .ok_or("packages directory has no parent")?
             .to_path_buf();
+        let pkg_specific_root = packages_root.join("pkg-specific");
         let staging_sysroot_dir = packages_root.join("work/sysroot-stage");
         let include_root_dir = staging_sysroot_dir.join(relative_dir(INCLUDEDIR));
         Ok(Self {
+            pkg_specific_root,
             staging_sysroot_dir: staging_sysroot_dir.clone(),
             real_sysroot_dir: base.join("sysroot"),
             relibc_root: base.join("relibc"),
@@ -81,6 +85,7 @@ pub struct PackagePaths {
     pub stamp: PathBuf,
     pub patch: PathBuf,
     pub build: PathBuf,
+    pub pkg_specific: PathBuf,
 }
 
 impl PackagePaths {

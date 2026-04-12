@@ -17,9 +17,12 @@ use crate::make_meta_package;
 use crate::make_package;
 use crate::misc::sysroot_dir;
 
-fn xorg_server_install_hook(ctx: &crate::types::Context) -> crate::types::Result<()> {
+fn xorg_server_install_hook(
+    ctx: &crate::types::Context,
+    paths: &crate::types::PackagePaths,
+) -> crate::types::Result<()> {
     let sysroot = sysroot_dir(ctx)?;
-    let source = ctx.packages_root.join("xorg-server/xorg.conf");
+    let source = paths.pkg_specific.join("xorg.conf");
     let target = sysroot.join("etc/X11/xorg.conf");
     copy_file(&source, &target)?;
 
@@ -27,13 +30,16 @@ fn xorg_server_install_hook(ctx: &crate::types::Context) -> crate::types::Result
     ensure_dir(&sysroot.join("var/lib/xkb"))
 }
 
-fn xorg_xinit_install_hook(ctx: &crate::types::Context) -> crate::types::Result<()> {
+fn xorg_xinit_install_hook(
+    ctx: &crate::types::Context,
+    paths: &crate::types::PackagePaths,
+) -> crate::types::Result<()> {
     let sysroot = sysroot_dir(ctx)?;
-    let xinitrc_source = ctx.packages_root.join("xorg-xinit/.xinitrc");
+    let xinitrc_source = paths.pkg_specific.join(".xinitrc");
     let xinitrc_target = sysroot.join("home/.xinitrc");
     copy_file(&xinitrc_source, &xinitrc_target)?;
 
-    let xserverrc_source = ctx.packages_root.join("xorg-xinit/.xserverrc");
+    let xserverrc_source = paths.pkg_specific.join(".xserverrc");
     let xserverrc_target = sysroot.join("home/.xserverrc");
     copy_file(&xserverrc_source, &xserverrc_target)
 }
@@ -84,8 +90,9 @@ make_package!(
         }
 
         fn install(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
+            let paths = self.calc_paths(ctx);
             install_autotools(self, ctx)?;
-            xorg_xinit_install_hook(ctx)
+            xorg_xinit_install_hook(ctx, &paths)
         }
     }
 );
@@ -391,7 +398,8 @@ make_package!(
 
         fn install(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
             install_meson(self, ctx)?;
-            xorg_server_install_hook(ctx)
+            let paths = self.calc_paths(ctx);
+            xorg_server_install_hook(ctx, &paths)
         }
     }
 );

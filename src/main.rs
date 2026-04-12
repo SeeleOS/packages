@@ -29,6 +29,7 @@ use types::{Action, Context, Result};
 
 use crate::package::base::BasePackage;
 use crate::package::desktop;
+use crate::package::desktop::Dwm;
 use crate::package::misc::FastFetch;
 use crate::package::xorg;
 
@@ -49,6 +50,7 @@ fn package_by_name(name: &str) -> Option<Box<dyn Package>> {
         "busybox" => Some(Box::new(Busybox)),
         "ncurses" => Some(Box::new(Ncurses)),
         "tcc" | "tinycc" => Some(Box::new(TinyCc)),
+        "dwm" => Some(Box::new(Dwm)),
         "fastfetch" => Some(Box::new(FastFetch)),
         "st" => Some(Box::new(St)),
         "vim" => Some(Box::new(Vim)),

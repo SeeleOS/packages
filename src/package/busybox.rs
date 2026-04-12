@@ -15,7 +15,7 @@ make_package!(
     package_impl = {
         fn configure(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
             let paths = self.calc_paths(ctx);
-            load_config(ctx, &paths)?;
+            load_config(&paths)?;
             run(CommandSpec::new("sh").arg("-c").arg(format!(
                 "yes \"\" | make -C '{}' O='{}' HOSTCC='gcc' oldconfig >/dev/null",
                 paths.src.display(),
@@ -65,10 +65,9 @@ make_package!(
 );
 
 fn load_config(
-    ctx: &crate::types::Context,
     paths: &crate::types::PackagePaths,
 ) -> crate::types::Result<()> {
-    let config_in = ctx.packages_root.join("busybox/seele.config");
+    let config_in = paths.pkg_specific.join("seele.config");
     let build_config = paths.build.join(".config");
     remove_if_exists(&build_config)?;
     run(make()
