@@ -7,7 +7,7 @@ use crate::install::install_file;
 use crate::layout::relative_dir;
 use crate::make_package;
 use crate::misc::sysroot_dir;
-use crate::package::desktop::{Fontconfig, LiberationFonts, LibXft};
+use crate::package::desktop::{Fontconfig, LibXft, LiberationFonts};
 use crate::package::xorg::{Freetype2, LibX11};
 
 const VERSION: &str = "0.9.3";
@@ -25,16 +25,14 @@ make_package!(
 
         fn build(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
             let paths = self.calc_paths(ctx);
-            run(
-                target_env(
-                    make()
-                        .cwd(&paths.src)
-                        .arg(format!("CC=clang --target={TARGET_TRIPLE}"))
-                        .arg(format!("X11INC={}", ctx.include_root_dir.display()))
-                        .arg(format!("X11LIB={}", ctx.lib_binary_dir.display())),
-                    ctx,
-                )?,
-            )
+            run(target_env(
+                make()
+                    .cwd(&paths.src)
+                    .arg(format!("CC=clang --target={TARGET_TRIPLE}"))
+                    .arg(format!("X11INC={}", ctx.include_root_dir.display()))
+                    .arg(format!("X11LIB={}", ctx.lib_binary_dir.display())),
+                ctx,
+            )?)
         }
 
         fn install(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
@@ -52,14 +50,12 @@ make_package!(
             )?;
 
             ensure_dir(&terminfo_dir)?;
-            run(
-                CommandSpec::new("tic")
-                    .cwd(&paths.src)
-                    .arg("-sx")
-                    .arg("-o")
-                    .arg(&terminfo_dir)
-                    .arg("st.info"),
-            )
+            run(CommandSpec::new("tic")
+                .cwd(&paths.src)
+                .arg("-sx")
+                .arg("-o")
+                .arg(&terminfo_dir)
+                .arg("st.info"))
         }
     }
 );
