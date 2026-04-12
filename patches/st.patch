@@ -12,7 +12,7 @@ index 2fc854e..dfb9b1c 100644
         `$(PKG_CONFIG) --libs freetype2`
  
 diff --git a/st.c b/st.c
-index 8e57991..eec76df 100644
+index 8e57991..74c2333 100644
 --- a/st.c
 +++ b/st.c
 @@ -20,7 +20,7 @@
@@ -24,7 +24,29 @@ index 8e57991..eec76df 100644
   #include <pty.h>
  #elif defined(__OpenBSD__) || defined(__NetBSD__) || defined(__APPLE__)
   #include <util.h>
-@@ -888,7 +888,7 @@ ttywriteraw(const char *s, size_t n)
+@@ -706,6 +706,7 @@ execsh(char *cmd, char **args)
+ 	signal(SIGALRM, SIG_DFL);
+ 
+ 	execvp(prog, args);
++	fprintf(stderr, "st: execvp(%s) failed: %s\n", prog, strerror(errno));
+ 	_exit(1);
+ }
+ 
+@@ -855,11 +856,11 @@ ttywrite(const char *s, size_t n, int may_echo)
+ 
+ 	/* This is similar to how the kernel handles ONLCR for ttys */
+ 	while (n > 0) {
+-		if (*s == '\r') {
++		if (*s == '\n') {
+ 			next = s + 1;
+ 			ttywriteraw("\r\n", 2);
+ 		} else {
+-			next = memchr(s, '\r', n);
++			next = memchr(s, '\n', n);
+ 			DEFAULT(next, s + n);
+ 			ttywriteraw(s, next - s);
+ 		}
+@@ -888,7 +889,7 @@ ttywriteraw(const char *s, size_t n)
  		FD_SET(cmdfd, &rfd);
  
  		/* Check if we can write. */

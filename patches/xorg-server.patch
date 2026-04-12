@@ -318,15 +318,37 @@ index 7d554e60a..ef3e28072 100644
      xf86Msg(X_ERROR, "fbdevhw is not available on this platform\n");
      return FALSE;
 diff --git a/hw/xfree86/fbdevhw/meson.build b/hw/xfree86/fbdevhw/meson.build
-index f3146f3c9..866735a49 100644
+index f3146f3c9..e5a224e8a 100644
 --- a/hw/xfree86/fbdevhw/meson.build
 +++ b/hw/xfree86/fbdevhw/meson.build
 @@ -1,4 +1,4 @@
 -if host_machine.system() == 'linux'
-+if ['linux', 'seele'].contains(host_machine.system())
++if is_linux_like
      srcs_fbdevhw = 'fbdevhw.c'
  else
      srcs_fbdevhw = 'fbdevhwstub.c'
+diff --git a/hw/xfree86/os-support/meson.build b/hw/xfree86/os-support/meson.build
+index 236f5de66..ab86e73c8 100644
+--- a/hw/xfree86/os-support/meson.build
++++ b/hw/xfree86/os-support/meson.build
+@@ -16,7 +16,7 @@ os_c_args = []
+ 
+ if get_option('pciaccess')
+     srcs_xorg_os_support += 'bus/Pci.c'
+-    if host_machine.system() != 'linux'
++    if not is_linux_like
+         srcs_xorg_os_support += 'bus/bsd_pci.c'
+     endif
+     if host_machine.cpu_family() in ['sparc', 'sparc64']
+@@ -31,7 +31,7 @@ else
+     build_agp = get_option('agp') == 'true'
+ endif
+ 
+-if host_machine.system() == 'linux'
++if is_linux_like
+     srcs_xorg_os_support += [
+         'linux/lnx_bell.c',
+         'linux/lnx_init.c',
 diff --git a/hw/xfree86/os-support/shared/posix_tty.c b/hw/xfree86/os-support/shared/posix_tty.c
 index 0cb9788cc..e8cac5d39 100644
 --- a/hw/xfree86/os-support/shared/posix_tty.c
@@ -378,10 +400,19 @@ index 159c8064c..3cc69de59 100644
  #include <sys/kd.h>
  #include <sys/vt.h>
 diff --git a/meson.build b/meson.build
-index 5add847b1..f733f9657 100644
+index 5add847b1..cb78dd565 100644
 --- a/meson.build
 +++ b/meson.build
-@@ -41,7 +41,7 @@ if cc.get_id() == 'gcc' or cc.get_id() == 'clang'
+@@ -11,6 +11,8 @@ release_date = '2025-11-25'
+ add_project_arguments('-DHAVE_DIX_CONFIG_H', language: ['c', 'objc'])
+ cc = meson.get_compiler('c')
+ 
++is_linux_like = ['linux', 'seele'].contains(host_machine.system())
++
+ add_global_arguments('-fno-strict-aliasing', language : 'c')
+ add_global_arguments('-fvisibility=hidden', language : 'c')
+ 
+@@ -41,7 +43,7 @@ if cc.get_id() == 'gcc' or cc.get_id() == 'clang'
          '-Werror=sequence-point',
          '-Werror=return-type',
          '-Werror=trigraphs',
@@ -390,7 +421,7 @@ index 5add847b1..f733f9657 100644
          '-Werror=write-strings',
          '-Werror=address',
          '-Werror=int-to-pointer-cast',
-@@ -318,6 +318,10 @@ test_sha1 = [
+@@ -318,6 +320,10 @@ test_sha1 = [
      'libcrypto',
  ]
  
@@ -401,7 +432,7 @@ index 5add847b1..f733f9657 100644
  if get_option('sha1') != 'auto'
      test_sha1 = [get_option('sha1')]
  endif
-@@ -375,6 +379,9 @@ foreach t : test_sha1
+@@ -375,6 +381,9 @@ foreach t : test_sha1
                 sha1_dep = openssl_dep
              endif
          endif
@@ -411,7 +442,7 @@ index 5add847b1..f733f9657 100644
      endif
  
      if sha1_found
-@@ -388,6 +395,10 @@ if sha1_found
+@@ -388,6 +397,10 @@ if sha1_found
  else
      if get_option('sha1') != 'auto'
          error('@0@ SHA1 requested, but not found'.format(get_option('sha1')))
