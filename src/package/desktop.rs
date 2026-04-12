@@ -9,14 +9,14 @@ use crate::fs_utils::{copy_file, ensure_dir};
 use crate::install::install_autotools;
 use crate::layout::{LIB_BINARY_DIR, relative_dir};
 use crate::make_autotools_packages;
-use crate::make_meta_package;
 use crate::make_meson_packages;
+use crate::make_meta_package;
 use crate::make_package;
 use crate::misc::sysroot_dir;
 
 use crate::package::xorg::{
-    Freetype2, LibSm, LibX11, LibXext, LibXfixes, LibXinerama, LibXrandr, LibXrender,
-    XorgProto, Zlib,
+    Freetype2, LibSm, LibX11, LibXext, LibXfixes, LibXinerama, LibXrandr, LibXrender, XorgProto,
+    Zlib,
 };
 
 fn rewrite_openbox_script(sysroot: &std::path::Path, rel: &str) -> crate::types::Result<()> {
@@ -51,7 +51,8 @@ fn openbox_install_hook(ctx: &crate::types::Context) -> crate::types::Result<()>
 make_package!(
     Expat,
     "expat",
-    tarball_url = "https://github.com/libexpat/libexpat/releases/download/R_2_7_3/expat-2.7.3.tar.xz",
+    tarball_url =
+        "https://github.com/libexpat/libexpat/releases/download/R_2_7_3/expat-2.7.3.tar.xz",
     package_impl = {
         fn configure(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
             configure_autotools(
@@ -229,7 +230,18 @@ make_package!(
     Openbox,
     "openbox",
     tarball_url = "https://openbox.org/dist/openbox/openbox-3.6.1.tar.gz",
-    dependencies = [Glib2, Pango, LibXml2, LibXft, LibXcursor, LibXinerama, LibXrandr, LibSm, LibXext, LibX11],
+    dependencies = [
+        Glib2,
+        Pango,
+        LibXml2,
+        LibXft,
+        LibXcursor,
+        LibXinerama,
+        LibXrandr,
+        LibSm,
+        LibXext,
+        LibX11
+    ],
     package_impl = {
         fn configure(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
             configure_autotools(
@@ -263,4 +275,11 @@ make_meson_packages!(
 );
 
 pub struct OpenboxStackPackage;
-make_meta_package!("openbox-stack", OpenboxStackPackage, Glib2, LibXml2, Pango, Openbox);
+make_meta_package!(
+    "openbox-stack",
+    OpenboxStackPackage,
+    Glib2,
+    LibXml2,
+    Pango,
+    Openbox
+);

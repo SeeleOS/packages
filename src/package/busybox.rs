@@ -53,7 +53,10 @@ make_package!(
             if !busybox_bin.is_file() {
                 return Err(format!("{} was not installed", busybox_bin.display()).into());
             }
-            if !std::fs::symlink_metadata(&ls_link)?.file_type().is_symlink() {
+            if !std::fs::symlink_metadata(&ls_link)?
+                .file_type()
+                .is_symlink()
+            {
                 return Err(format!("{} is not a symlink", ls_link.display()).into());
             }
             Ok(())
@@ -61,7 +64,10 @@ make_package!(
     }
 );
 
-fn load_config(ctx: &crate::types::Context, paths: &crate::types::PackagePaths) -> crate::types::Result<()> {
+fn load_config(
+    ctx: &crate::types::Context,
+    paths: &crate::types::PackagePaths,
+) -> crate::types::Result<()> {
     let config_in = ctx.packages_root.join("busybox/seele.config");
     let build_config = paths.build.join(".config");
     remove_if_exists(&build_config)?;

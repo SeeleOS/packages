@@ -137,12 +137,8 @@ pub fn configure_cmake(
         .arg("-DCMAKE_BUILD_TYPE=Release")
         .arg("-DCMAKE_C_COMPILER=clang")
         .arg("-DCMAKE_CXX_COMPILER=clang++")
-        .arg(format!(
-            "-DCMAKE_C_COMPILER_TARGET={TARGET_TRIPLE}"
-        ))
-        .arg(format!(
-            "-DCMAKE_CXX_COMPILER_TARGET={TARGET_TRIPLE}"
-        ))
+        .arg(format!("-DCMAKE_C_COMPILER_TARGET={TARGET_TRIPLE}"))
+        .arg(format!("-DCMAKE_CXX_COMPILER_TARGET={TARGET_TRIPLE}"))
         .arg(format!("-DCMAKE_ASM_COMPILER_TARGET={TARGET_TRIPLE}"))
         .arg(format!("-DCMAKE_SYSROOT={}", sysroot.display()))
         .arg("-DCMAKE_POSITION_INDEPENDENT_CODE=ON")

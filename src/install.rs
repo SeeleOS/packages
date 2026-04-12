@@ -1,5 +1,5 @@
 use crate::{
-    command::{run, CommandSpec},
+    command::{CommandSpec, run},
     fs_utils::{copy_dir_contents, copy_file, ensure_dir, verify_same_size},
     misc::{deployed_sysroot_dir, mount_sysroot, sysroot_dir, umount_sysroot, walk_files},
     r#trait::Package,
@@ -29,7 +29,11 @@ pub trait Install: Package {
     }
 }
 
-pub fn install_file(_pkg: &dyn Package, source: &std::path::Path, target: &std::path::Path) -> Result<()> {
+pub fn install_file(
+    _pkg: &dyn Package,
+    source: &std::path::Path,
+    target: &std::path::Path,
+) -> Result<()> {
     copy_file(source, target)?;
     verify_same_size(source, target)?;
     Ok(())
@@ -87,7 +91,12 @@ pub fn install_cmake(pkg: &dyn Package, ctx: &Context) -> Result<()> {
     prune_libtool_archives(&sysroot)
 }
 
-pub fn install_cargo(pkg: &dyn Package, ctx: &Context, bins: Vec<String>, profile: &str) -> Result<()> {
+pub fn install_cargo(
+    pkg: &dyn Package,
+    ctx: &Context,
+    bins: Vec<String>,
+    profile: &str,
+) -> Result<()> {
     let paths = pkg.calc_paths(ctx);
     let bins = if bins.is_empty() {
         vec![pkg.install_name().to_string()]
@@ -115,7 +124,10 @@ pub fn deploy_sysroot(ctx: &Context) -> Result<()> {
 
     ensure_dir(&staging)?;
     mount_sysroot()?;
-    run(CommandSpec::new("sudo").arg("mkdir").arg("-p").arg(&deployed))?;
+    run(CommandSpec::new("sudo")
+        .arg("mkdir")
+        .arg("-p")
+        .arg(&deployed))?;
     run(CommandSpec::new("sudo")
         .arg("cp")
         .arg("-a")

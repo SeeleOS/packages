@@ -23,11 +23,23 @@ make_package!(
                     ("CC".to_string(), CC.to_string()),
                     ("CC_FOR_BUILD".to_string(), CC_FOR_BUILD.to_string()),
                     ("CFLAGS_FOR_BUILD".to_string(), CFLAGS_FOR_BUILD.to_string()),
-                    ("bash_cv_getenv_redef".to_string(), BASH_CV_GETENV_REDEF.to_string()),
-                    ("bash_cv_getcwd_malloc".to_string(), BASH_CV_GETCWD_MALLOC.to_string()),
-                    ("bash_cv_func_strchrnul_works".to_string(), BASH_CV_FUNC_STRCHRNUL_WORKS.to_string()),
+                    (
+                        "bash_cv_getenv_redef".to_string(),
+                        BASH_CV_GETENV_REDEF.to_string(),
+                    ),
+                    (
+                        "bash_cv_getcwd_malloc".to_string(),
+                        BASH_CV_GETCWD_MALLOC.to_string(),
+                    ),
+                    (
+                        "bash_cv_func_strchrnul_works".to_string(),
+                        BASH_CV_FUNC_STRCHRNUL_WORKS.to_string(),
+                    ),
                 ],
-                vec!["--disable-nls".to_string(), "--without-bash-malloc".to_string()],
+                vec![
+                    "--disable-nls".to_string(),
+                    "--without-bash-malloc".to_string(),
+                ],
                 Vec::new(),
             )
         }
