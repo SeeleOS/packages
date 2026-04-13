@@ -32,6 +32,7 @@ use crate::package::desktop;
 use crate::package::desktop::Dwm;
 use crate::package::feh::{Feh, Imlib2, LibPng};
 use crate::package::misc::FastFetch;
+use crate::package::misc::RenderTM;
 use crate::package::xorg;
 
 fn usage() {
@@ -99,6 +100,7 @@ fn package_by_name(name: &str) -> Option<Box<dyn Package>> {
         "libxaw" => Some(Box::new(xorg::LibXaw)),
         "libxt" => Some(Box::new(xorg::LibXt)),
         "freetype" | "freetype2" => Some(Box::new(xorg::Freetype2)),
+        "rendertm" => Some(Box::new(RenderTM)),
         "libfontenc" => Some(Box::new(xorg::LibFontenc)),
         "libxcvt" => Some(Box::new(xorg::LibXcvt)),
         "libxfont2" => Some(Box::new(xorg::LibXfont2)),

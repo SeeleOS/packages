@@ -29,5 +29,6 @@ make_cmake_packages!(
         "-DENABLE_EMBEDDED_PCIIDS=OFF".to_string(),
         "-DENABLE_EMBEDDED_AMDGPUIDS=OFF".to_string(),
         "-DENABLE_WORDEXP=OFF".to_string(),
-    ] } }
+    ] } },
+    { RenderTM, "rendertm", git_url = "https://github.com/xiaoyi1212/RenderTM" }
 );
