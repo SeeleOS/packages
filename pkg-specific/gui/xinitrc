@@ -1,5 +1,5 @@
 #!/programs/bash
 
 st &
-feh --bg-fill /misc/wallpaper.jpg &
+feh --bg-fill /misc/wallpaper.png &
 exec dwm
