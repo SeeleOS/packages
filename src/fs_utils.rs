@@ -46,7 +46,10 @@ pub fn list_patch_files(dir: &Path) -> Result<Vec<PathBuf>> {
     for entry in fs::read_dir(dir)? {
         let entry = entry?;
         let path = entry.path();
-        if path.extension() == Some(OsStr::new("patch")) {
+        if matches!(
+            path.extension(),
+            Some(ext) if ext == OsStr::new("patch") || ext == OsStr::new("diff")
+        ) {
             entries.push(path);
         }
     }
