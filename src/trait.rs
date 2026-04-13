@@ -50,17 +50,9 @@ pub fn apply_patch_file(src_dir: &std::path::Path, patch: &std::path::Path) -> R
 }
 
 pub fn apply_pkg_specific_patches(paths: &PackagePaths) -> Result<()> {
-    let config_patch = paths.pkg_specific.join("config.patch");
-    if config_patch.is_file() {
-        apply_patch_file(&paths.src, &config_patch)?;
-    }
-
     let mut patch_files = list_patch_files(&paths.pkg_specific)?;
     patch_files.sort();
     for patch in patch_files {
-        if patch == config_patch {
-            continue;
-        }
         apply_patch_file(&paths.src, &patch)?;
     }
 
