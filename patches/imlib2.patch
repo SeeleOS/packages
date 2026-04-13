@@ -1,0 +1,105 @@
+diff --git a/src/lib/x11_ximage.c b/src/lib/x11_ximage.c
+index f977d61..3aaf851 100644
+--- a/src/lib/x11_ximage.c
++++ b/src/lib/x11_ximage.c
+@@ -11,8 +11,6 @@
+ #include <xcb/shm.h>
+ #include <sys/mman.h>
+ #endif
+-#include <sys/ipc.h>
+-#include <sys/shm.h>
+ 
+ #include "x11_ximage.h"
+ 
+@@ -176,60 +174,7 @@ __imlib_ShmGetXImage(const ImlibContextX11 *x11, Drawable draw, int depth,
+             x_does_shm = 0;
+         }
+     }
+-    else
+ #endif
+-    {
+-        /* get an shm id of this image */
+-        si->shmid = shmget(IPC_PRIVATE, xim->bytes_per_line * xim->height,
+-                           IPC_CREAT | 0666);
+-        /* if the get succeeds */
+-        if (si->shmid != -1)
+-        {
+-            /* set the params for the shm segment */
+-            si->readOnly = False;
+-            si->shmaddr = xim->data = shmat(si->shmid, 0, 0);
+-            /* get the shm addr for this data chunk */
+-            if (xim->data != (char *)-1)
+-            {
+-                XErrorHandler   ph = NULL;
+-
+-                if (x_does_shm == 2)
+-                {
+-                    /* setup a temporary error handler */
+-                    _x_err = 0;
+-                    XSync(x11->dpy, False);
+-                    ph = XSetErrorHandler(TmpXError);
+-                }
+-                /* ask X to attach to the shared mem segment */
+-                XShmAttach(x11->dpy, si);
+-                if (draw != None)
+-                    XShmGetImage(x11->dpy, draw, xim, x, y, 0xffffffff);
+-                if (x_does_shm == 2)
+-                {
+-                    /* wait for X to reply and do this */
+-                    XSync(x11->dpy, False);
+-                    /* reset the error handler */
+-                    XSetErrorHandler(ph);
+-                    x_does_shm = 1;
+-                }
+-
+-                /* if we attached without an error we're set */
+-                if (_x_err == 0)
+-                    return xim;
+-
+-                /* attach by X failed... must be remote client */
+-                /* flag shm forever to not work - remote */
+-                x_does_shm = 0;
+-
+-                /* detach */
+-                shmdt(si->shmaddr);
+-            }
+-
+-            /* get failed - out of shm id's or shm segment too big ? */
+-            /* remove the shm id we created */
+-            shmctl(si->shmid, IPC_RMID, 0);
+-        }
+-    }
+ 
+     /* couldnt create SHM image ? */
+     /* destroy previous image */
+@@ -245,16 +190,10 @@ __imlib_ShmDestroyXImage(const ImlibContextX11 *x11, XImage *xim,
+     XSync(x11->dpy, False);
+     XShmDetach(x11->dpy, si);
+ #ifdef HAVE_X11_SHM_FD
+-    if (x_does_shm_fd)
+-    {
++    if (x_does_shm_fd) {
+         munmap(si->shmaddr, xim->bytes_per_line * xim->height);
+     }
+-    else
+ #endif
+-    {
+-        shmdt(si->shmaddr);
+-        shmctl(si->shmid, IPC_RMID, 0);
+-    }
+     XDestroyImage(xim);
+ }
+ 
+diff --git a/src/lib/x11_grab.c b/src/lib/x11_grab.c
+index 9ad32ff..55a9651 100644
+--- a/src/lib/x11_grab.c
++++ b/src/lib/x11_grab.c
+@@ -4,8 +4,6 @@
+ #include <X11/Xutil.h>
+ #include <X11/extensions/shape.h>
+ #include <X11/extensions/XShm.h>
+-#include <sys/ipc.h>
+-#include <sys/shm.h>
+ 
+ #include "x11_grab.h"
+ #include "x11_ximage.h"
