@@ -4,7 +4,7 @@ use std::fs;
 
 use crate::build::build_relibc;
 use crate::command::{CommandSpec, run_output};
-use crate::fs_utils::ensure_dir;
+use crate::fs_utils::{ensure_dir, list_patch_files};
 use crate::install::deploy_sysroot;
 use crate::misc::with_stamp;
 use crate::types::{Action, Context, PackagePaths, Result};
@@ -26,7 +26,7 @@ fn patch_command<'a>(src_dir: &'a std::path::Path, patch: &'a std::path::Path) -
         .stdin_file(patch)
 }
 
-fn apply_patch_file(src_dir: &std::path::Path, patch: &std::path::Path) -> Result<()> {
+pub fn apply_patch_file(src_dir: &std::path::Path, patch: &std::path::Path) -> Result<()> {
     let dry_run = run_output(patch_command(src_dir, patch).arg("--dry-run"))?;
     if dry_run.status.success() {
         let apply = run_output(patch_command(src_dir, patch))?;
@@ -47,6 +47,24 @@ fn apply_patch_file(src_dir: &std::path::Path, patch: &std::path::Path) -> Resul
     }
 
     Err(format!("patch {} failed:\n{}", patch.display(), dry_run_text).into())
+}
+
+pub fn apply_pkg_specific_patches(paths: &PackagePaths) -> Result<()> {
+    let config_patch = paths.pkg_specific.join("config.patch");
+    if config_patch.is_file() {
+        apply_patch_file(&paths.src, &config_patch)?;
+    }
+
+    let mut patch_files = list_patch_files(&paths.pkg_specific)?;
+    patch_files.sort();
+    for patch in patch_files {
+        if patch == config_patch {
+            continue;
+        }
+        apply_patch_file(&paths.src, &patch)?;
+    }
+
+    Ok(())
 }
 
 pub trait Package {

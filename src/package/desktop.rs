@@ -12,6 +12,7 @@ use crate::make_meson_packages;
 use crate::make_meta_package;
 use crate::make_package;
 use crate::misc::sysroot_dir;
+use crate::r#trait::apply_pkg_specific_patches;
 use crate::make_autotools_packages;
 
 use crate::package::xorg::{
@@ -276,6 +277,7 @@ make_package!(
     package_impl = {
         fn configure(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
             let paths = self.calc_paths(ctx);
+            apply_pkg_specific_patches(&paths)?;
             copy_file(&paths.src.join("config.def.h"), &paths.src.join("config.h"))
         }
 
