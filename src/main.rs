@@ -30,6 +30,7 @@ use types::{Action, Context, Result};
 use crate::package::base::BasePackage;
 use crate::package::desktop;
 use crate::package::desktop::Dwm;
+use crate::package::feh::{Feh, Imlib2, LibPng};
 use crate::package::misc::FastFetch;
 use crate::package::xorg;
 
@@ -51,6 +52,7 @@ fn package_by_name(name: &str) -> Option<Box<dyn Package>> {
         "ncurses" => Some(Box::new(Ncurses)),
         "tcc" | "tinycc" => Some(Box::new(TinyCc)),
         "dwm" => Some(Box::new(Dwm)),
+        "feh" => Some(Box::new(Feh)),
         "fastfetch" => Some(Box::new(FastFetch)),
         "st" => Some(Box::new(St)),
         "vim" => Some(Box::new(Vim)),
@@ -65,6 +67,8 @@ fn package_by_name(name: &str) -> Option<Box<dyn Package>> {
         "liberation-fonts" | "liberation-mono" => Some(Box::new(desktop::LiberationFonts)),
         "libffi" => Some(Box::new(desktop::LibFfi)),
         "libiconv" => Some(Box::new(desktop::LibIconv)),
+        "imlib2" => Some(Box::new(Imlib2)),
+        "libpng" | "png" => Some(Box::new(LibPng)),
         "libxcursor" => Some(Box::new(desktop::LibXcursor)),
         "libxft" => Some(Box::new(desktop::LibXft)),
         "libxml" | "libxml2" => Some(Box::new(desktop::LibXml2)),

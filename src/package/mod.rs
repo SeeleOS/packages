@@ -2,6 +2,7 @@ pub mod base;
 pub mod bash;
 pub mod busybox;
 pub mod desktop;
+pub mod feh;
 pub mod misc;
 pub mod ncurses;
 pub mod st;
