@@ -79,6 +79,39 @@ macro_rules! make_package {
             fn git_commit(&self) -> &'static str { $git_commit }
         }
     };
+    (
+        $ty:ident,
+        $name:literal,
+        git_url = $git_url:expr
+        $(, dependencies = [$($dep:path),* $(,)?])?
+        ,
+        package_impl = { $($impls:tt)* }
+        $(,)?
+    ) => {
+        pub struct $ty;
+
+        impl $crate::r#trait::Package for $ty {
+            fn name(&self) -> &'static str { $name }
+
+            fn dependencies(&self) -> Vec<Box<dyn $crate::r#trait::Package>> {
+                vec![
+                    $(
+                        $(Box::new($dep)),*
+                    )?
+                ]
+            }
+
+            fn fetch(&self, ctx: &$crate::types::Context) -> $crate::types::Result<()> {
+                <$ty as $crate::fetch::GitHeadFetch>::fetch(self, ctx)
+            }
+
+            $($impls)*
+        }
+
+        impl $crate::fetch::GitHeadFetch for $ty {
+            fn git_url(&self) -> &'static str { $git_url }
+        }
+    };
 }
 
 #[macro_export]

@@ -72,3 +72,23 @@ pub trait GitCloneFetch: Package {
         Ok(())
     }
 }
+
+pub trait GitHeadFetch: Package {
+    fn git_url(&self) -> &'static str;
+
+    fn fetch(&self, ctx: &Context) -> Result<()> {
+        let paths = self.calc_paths(ctx);
+        ensure_dir(&paths.root)?;
+        ensure_dir(&paths.stamp)?;
+        if paths.src.exists() {
+            fs::remove_dir_all(&paths.src)?;
+        }
+        run(CommandSpec::new("git")
+            .arg("clone")
+            .arg("--depth")
+            .arg("1")
+            .arg(self.git_url())
+            .arg(&paths.src))?;
+        Ok(())
+    }
+}
