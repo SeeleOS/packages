@@ -129,9 +129,10 @@ pub fn deploy_sysroot(ctx: &Context) -> Result<()> {
         .arg("-p")
         .arg(&deployed))?;
     run(CommandSpec::new("sudo")
-        .arg("cp")
+        .arg("rsync")
         .arg("-a")
-        .arg(staging.join("."))
+        .arg("--keep-dirlinks")
+        .arg(format!("{}/", staging.display()))
         .arg(&deployed))?;
     run(CommandSpec::new("sync"))?;
     umount_sysroot()
