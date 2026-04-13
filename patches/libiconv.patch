@@ -1,0 +1,22 @@
+diff --git a/src/Makefile.in b/src/Makefile.in
+index 92307d5..9c9ba1a 100644
+--- a/src/Makefile.in
++++ b/src/Makefile.in
+@@ -113,11 +113,7 @@ iconv_LDFLAGS = `if test -n '$(RELOCATABLE_LDFLAGS)'; then $(RELOCATABLE_LDFLAGS
+ # ../lib/libiconv.la entirely.
+ install : all force
+ 	if [ ! -d $(DESTDIR)$(bindir) ] ; then $(mkinstalldirs) $(DESTDIR)$(bindir) ; fi
+-	case "@host_os@" in \
+-	  hpux*) $(CC) $(LDFLAGS) $(CFLAGS) $(iconv_LDFLAGS) iconv.@OBJEXT@ ../srclib/libicrt.a -L$(DESTDIR)$(libdir) -liconv @LIBINTL@ $(OBJECTS_RES_@WOE32@) `if test -n '$(DESTDIR)'; then echo " -Wl,+b -Wl,$(libdir)"; fi` -o iconv$(EXEEXT);; \
+-	  *) $(LIBTOOL_LINK) $(CC) $(LDFLAGS) $(CFLAGS) $(iconv_LDFLAGS) iconv.@OBJEXT@ ../srclib/libicrt.a @LTLIBINTL@ $(DESTDIR)$(libdir)/libiconv.la $(OBJECTS_RES_@WOE32@) -o iconv$(EXEEXT);; \
+-	esac
+-	$(INSTALL_PROGRAM_ENV) $(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) iconv$(EXEEXT) $(DESTDIR)$(bindir)/iconv$(EXEEXT)
++	$(INSTALL_PROGRAM_ENV) $(INSTALL_PROGRAM) iconv_no_i18n$(EXEEXT) $(DESTDIR)$(bindir)/iconv$(EXEEXT)
+ 
+ install-strip : force
+ 	case '$(INSTALL_PROGRAM)' in \
+@@ -167,4 +163,3 @@ distdir : $(DISTFILES)
+ 	done
+ 
+ force :
+-
