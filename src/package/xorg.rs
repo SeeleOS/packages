@@ -16,6 +16,9 @@ use crate::make_meson_packages;
 use crate::make_meta_package;
 use crate::make_package;
 use crate::misc::sysroot_dir;
+use crate::package::desktop::Dwm;
+use crate::package::feh::Feh;
+use crate::r#trait::Package;
 
 fn xorg_server_install_hook(
     ctx: &crate::types::Context,
@@ -42,6 +45,19 @@ fn xorg_xinit_install_hook(
     let xserverrc_source = paths.pkg_specific.join(".xserverrc");
     let xserverrc_target = sysroot.join("home/.xserverrc");
     copy_file(&xserverrc_source, &xserverrc_target)
+}
+
+fn gui_post_install(pkg: &GuiPackage, ctx: &crate::types::Context) -> crate::types::Result<()> {
+    let paths = pkg.calc_paths(ctx);
+    let sysroot = sysroot_dir(ctx)?;
+    let source = paths.pkg_specific.join("xinitrc");
+    let target = sysroot.join("home/.xinitrc");
+
+    let wallpaper_src = paths.pkg_specific.join("wallpaper.png");
+    let wallpaper_target = sysroot.join("misc/wallpaper.png");
+
+    copy_file(&source, &target)?;
+    copy_file(&wallpaper_src, &wallpaper_target)
 }
 
 make_autotools_packages!(
@@ -408,13 +424,16 @@ pub struct GuiPackage;
 make_meta_package!(
     "gui",
     GuiPackage,
+    Dwm,
+    Feh,
     XorgServer,
     Xf86VideoFbdev,
     Xf86InputKeyboard,
     Xf86InputMouse,
     XorgXinit,
     XorgTwm,
-    XorgXeyes
+    XorgXeyes;
+    post_install = gui_post_install
 );
 
 pub struct XorgPackage;

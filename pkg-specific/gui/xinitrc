@@ -1,0 +1,5 @@
+#!/programs/bash
+
+st &
+feh --bg-fill /misc/wallpaper.jpg &
+exec dwm
