@@ -37,7 +37,8 @@ pub fn pkg_env<'a>(spec: CommandSpec<'a>, ctx: &'a Context) -> Result<CommandSpe
         .env("PKG_CONFIG_ALLOW_CROSS", "1")
         .env("PKG_CONFIG_SYSROOT_DIR", sysroot_dir(ctx)?)
         .env("PKG_CONFIG_LIBDIR", &pkg_config_path)
-        .env("PKG_CONFIG_PATH", &pkg_config_path))
+        .env("PKG_CONFIG_PATH", &pkg_config_path)
+        .env("PKG_CONFIG_PATH_FOR_TARGET", ""))
 }
 
 pub fn target_env<'a>(spec: CommandSpec<'a>, ctx: &'a Context) -> Result<CommandSpec<'a>> {
@@ -58,7 +59,15 @@ pub fn target_env<'a>(spec: CommandSpec<'a>, ctx: &'a Context) -> Result<Command
             " ",
         )
         .env_append("CFLAGS", "-fPIC", " ")
-        .env_append("CXXFLAGS", "-fPIC", " ")
+        .env_append(
+            "CXXFLAGS",
+            format!(
+                "-fPIC -idirafter{} -idirafter{}",
+                ctx.include_root_dir.display(),
+                ctx.include_c_dir.display()
+            ),
+            " ",
+        )
         .env_append(
             "LDFLAGS",
             format!(
@@ -84,7 +93,7 @@ pub fn meson_cross_file(ctx: &Context, paths: &PackagePaths) -> Result<PathBuf> 
              pkg-config = 'pkg-config'\n\
              \n[built-in options]\n\
              c_args = ['-fPIC', '-I{root_inc}', '-I{c_inc}']\n\
-             cpp_args = ['-fPIC', '-I{root_inc}', '-I{c_inc}']\n\
+             cpp_args = ['-fPIC', '-idirafter{root_inc}', '-idirafter{c_inc}']\n\
              c_link_args = ['-L{lib}', '-Wl,-rpath-link,{lib}']\n\
              cpp_link_args = ['-L{lib}', '-Wl,-rpath-link,{lib}']\n\
              \n[properties]\nneeds_exe_wrapper = true\n\
