@@ -19,11 +19,11 @@ pub fn run(spec: CommandSpec<'_>) -> Result<()> {
     if let Some(cwd) = spec.cwd {
         cmd.current_dir(cwd);
     }
-    for (key, val) in spec.envs {
-        cmd.env(key, val);
-    }
     for key in spec.env_removes {
         cmd.env_remove(key);
+    }
+    for (key, val) in spec.envs {
+        cmd.env(key, val);
     }
     if let Some(path) = spec.stdin_file {
         let file = fs::File::open(path)?;
@@ -58,11 +58,11 @@ pub fn run_output(spec: CommandSpec<'_>) -> Result<std::process::Output> {
     if let Some(cwd) = spec.cwd {
         cmd.current_dir(cwd);
     }
-    for (key, val) in spec.envs {
-        cmd.env(key, val);
-    }
     for key in spec.env_removes {
         cmd.env_remove(key);
+    }
+    for (key, val) in spec.envs {
+        cmd.env(key, val);
     }
     if let Some(path) = spec.stdin_file {
         let file = fs::File::open(path)?;
