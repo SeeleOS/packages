@@ -242,6 +242,24 @@ index 854b95a..ffe8119 100644
                   #include <netinet/in.h>
                   #include <arpa/nameser.h>
                   #include <resolv.h>
+diff --git a/glib/gatomic.h b/glib/gatomic.h
+index 9399888..23640c4 100644
+--- a/glib/gatomic.h
++++ b/glib/gatomic.h
+@@ -251,11 +251,11 @@ G_END_DECLS
+ #else /* if !(defined(glib_typeof) && defined(G_CXX_STD_VERSION) */
+ #define g_atomic_pointer_compare_and_exchange(atomic, oldval, newval) \
+   (G_GNUC_EXTENSION ({                                                       \
+-    G_STATIC_ASSERT (sizeof (oldval) == sizeof (gpointer));                  \
+     gpointer gapcae_oldval = (gpointer)(oldval);                             \
++    gpointer gapcae_newval = (gpointer)(newval);                             \
+     G_STATIC_ASSERT (sizeof *(atomic) == sizeof (gpointer));                 \
+     (void) (0 ? (gpointer) *(atomic) : NULL);                                \
+-    __atomic_compare_exchange_n ((atomic), (void *) (&(gapcae_oldval)), (newval), FALSE, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST) ? TRUE : FALSE; \
++    __atomic_compare_exchange_n ((atomic), (void *) (&(gapcae_oldval)), gapcae_newval, FALSE, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST) ? TRUE : FALSE; \
+   }))
+ #endif /* defined(glib_typeof) */
+ #define g_atomic_pointer_compare_and_exchange_full(atomic, oldval, newval, preval) \
 diff --git a/glib/meson.build b/glib/meson.build
 index 837960d..aebe6af 100644
 --- a/glib/meson.build
