@@ -2,17 +2,17 @@ use std::fs;
 use std::os::unix::fs::symlink;
 
 use crate::build::build_autotools_with;
-use crate::command::{CommandSpec, capture, make, run};
+use crate::command::{CommandSpec, run};
 use crate::configure::configure_autotools;
-use crate::cross::{TARGET_TRIPLE, pkg_env, target_env};
+use crate::cross::target_env;
 use crate::fs_utils::{copy_file, ensure_dir};
-use crate::install::{install_autotools, install_file};
+use crate::install::install_autotools;
 use crate::layout::{LIB_BINARY_DIR, relative_dir};
+use crate::make_autotools_package;
 use crate::make_meson_packages;
 use crate::make_meta_package;
 use crate::make_package;
 use crate::misc::sysroot_dir;
-use crate::r#trait::apply_pkg_specific_patches;
 use crate::make_autotools_packages;
 
 use crate::package::xorg::{
@@ -269,63 +269,12 @@ make_package!(
     }
 );
 
-make_package!(
+make_autotools_package!(
     Dwm,
     "dwm",
-    tarball_url = "https://dl.suckless.org/dwm/dwm-6.8.tar.gz",
+    git_url = "https://github.com/SeeleOS/dwm",
     dependencies = [GuiPackage, LibXft, LibXinerama, Fontconfig, Freetype2, Gettext],
-    package_impl = {
-        fn configure(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
-            let paths = self.calc_paths(ctx);
-            apply_pkg_specific_patches(&paths)?;
-            copy_file(&paths.src.join("config.def.h"), &paths.src.join("config.h"))
-        }
-
-        fn build(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
-            let paths = self.calc_paths(ctx);
-            let incs = capture(pkg_env(
-                CommandSpec::new("pkg-config")
-                    .arg("--cflags")
-                    .arg("x11")
-                    .arg("xinerama")
-                    .arg("xft")
-                    .arg("fontconfig")
-                    .arg("freetype2"),
-                ctx,
-            )?)?;
-            let libs = capture(pkg_env(
-                CommandSpec::new("pkg-config")
-                    .arg("--libs")
-                    .arg("--static")
-                    .arg("x11")
-                    .arg("xinerama")
-                    .arg("xft"),
-                ctx,
-            )?)?;
-            run(target_env(
-                make()
-                    .cwd(&paths.src)
-                    .arg(format!("CC=clang --target={TARGET_TRIPLE}"))
-                    .arg(format!("INCS={}", incs.trim()))
-                    .arg(format!("LIBS={} -lintl -liconv", libs.trim())),
-                ctx,
-            )?)
-        }
-
-        fn install(&self, ctx: &crate::types::Context) -> crate::types::Result<()> {
-            let paths = self.calc_paths(ctx);
-            let sysroot = sysroot_dir(ctx)?;
-            let man_dir = sysroot.join(relative_dir("/share/man/man1"));
-
-            install_file(self, &paths.src.join("dwm"), &ctx.install_dir.join("dwm"))?;
-
-            ensure_dir(&man_dir)?;
-            fs::write(
-                man_dir.join("dwm.1"),
-                fs::read_to_string(paths.src.join("dwm.1"))?.replace("VERSION", "6.8"),
-            )?;
-            Ok(())
-        }
+    configure_override = {
     }
 );
 
