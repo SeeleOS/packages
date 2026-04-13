@@ -3,6 +3,7 @@ pub mod bash;
 pub mod busybox;
 pub mod desktop;
 pub mod feh;
+pub mod gtk;
 pub mod misc;
 pub mod ncurses;
 pub mod st;

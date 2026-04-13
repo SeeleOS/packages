@@ -31,6 +31,7 @@ use crate::package::base::BasePackage;
 use crate::package::desktop;
 use crate::package::desktop::Dwm;
 use crate::package::feh::{Feh, Imlib2, LibPng};
+use crate::package::gtk;
 use crate::package::misc::FastFetch;
 use crate::package::misc::RenderTM;
 use crate::package::xorg;
@@ -69,6 +70,9 @@ fn package_by_name(name: &str) -> Option<Box<dyn Package>> {
         "libffi" => Some(Box::new(desktop::LibFfi)),
         "libiconv" => Some(Box::new(desktop::LibIconv)),
         "imlib2" => Some(Box::new(Imlib2)),
+        "atk" => Some(Box::new(gtk::Atk)),
+        "cairo" => Some(Box::new(gtk::Cairo)),
+        "gdk-pixbuf" => Some(Box::new(gtk::GdkPixbuf)),
         "libpng" | "png" => Some(Box::new(LibPng)),
         "libxcursor" => Some(Box::new(desktop::LibXcursor)),
         "libxft" => Some(Box::new(desktop::LibXft)),
@@ -76,6 +80,9 @@ fn package_by_name(name: &str) -> Option<Box<dyn Package>> {
         "openbox" => Some(Box::new(desktop::Openbox)),
         "pango" => Some(Box::new(desktop::Pango)),
         "pcre2" => Some(Box::new(desktop::Pcre2)),
+        "gtk2" => Some(Box::new(gtk::Gtk2)),
+        "gtk3" => Some(Box::new(gtk::Gtk3)),
+        "gtk4" => Some(Box::new(gtk::Gtk4)),
         "gui" => Some(Box::new(xorg::GuiPackage)),
         "xorg" => Some(Box::new(xorg::XorgPackage)),
         "xcb-proto" => Some(Box::new(xorg::XcbProto)),
