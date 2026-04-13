@@ -1,6 +1,8 @@
 use std::process::Output;
 
 use std::fs;
+use std::collections::HashSet;
+use std::sync::{Mutex, OnceLock};
 
 use crate::build::build_relibc;
 use crate::command::{CommandSpec, run_output};
@@ -8,6 +10,11 @@ use crate::fs_utils::{ensure_dir, list_patch_files};
 use crate::install::deploy_sysroot;
 use crate::misc::with_stamp;
 use crate::types::{Action, Context, PackagePaths, Result};
+
+fn processed_packages() -> &'static Mutex<HashSet<&'static str>> {
+    static PROCESSED: OnceLock<Mutex<HashSet<&'static str>>> = OnceLock::new();
+    PROCESSED.get_or_init(|| Mutex::new(HashSet::new()))
+}
 
 fn patch_output_text(output: &Output) -> String {
     let mut text = String::new();
@@ -111,6 +118,16 @@ pub trait Package {
     }
 
     fn make(&self, ctx: &Context) -> Result<()> {
+        {
+            let processed = processed_packages()
+                .lock()
+                .map_err(|_| "processed package set mutex poisoned")?;
+            if processed.contains(self.name()) {
+                return Ok(());
+            }
+        }
+
+        eprintln!("[packages] start {}", self.name());
         if !ctx.ignore_deps {
             for dep in self.dependencies() {
                 dep.make(ctx)?;
@@ -136,6 +153,10 @@ pub trait Package {
         with_stamp(|| self.build(ctx), "build", &paths, ctx.rebuild, false)?;
         paths.ensure()?;
         with_stamp(|| self.install(ctx), "install", &paths, ctx.rebuild, false)?;
+        processed_packages()
+            .lock()
+            .map_err(|_| "processed package set mutex poisoned")?
+            .insert(self.name());
 
         Ok(())
     }
