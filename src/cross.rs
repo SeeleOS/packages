@@ -27,6 +27,20 @@ pub fn pkg_env<'a>(spec: CommandSpec<'a>, ctx: &'a Context) -> Result<CommandSpe
     let compat_libdir = ctx.staging_sysroot_dir.join("libs").join("pkgconfig");
     let libdir = ctx.lib_binary_dir.join("pkgconfig");
     let sharedir = ctx.staging_sysroot_dir.join("share").join("pkgconfig");
+    let llvm_bin = ctx
+        .packages_root
+        .parent()
+        .ok_or("packages directory has no parent")?
+        .join(".llvm/bin");
+    let current_path = std::env::var_os("PATH").unwrap_or_default();
+    let path = if current_path.is_empty() {
+        llvm_bin.into_os_string()
+    } else {
+        let mut merged = llvm_bin.into_os_string();
+        merged.push(":");
+        merged.push(current_path);
+        merged
+    };
     let pkg_config_path = format!(
         "{}:{}:{}",
         compat_libdir.display(),
@@ -34,6 +48,15 @@ pub fn pkg_env<'a>(spec: CommandSpec<'a>, ctx: &'a Context) -> Result<CommandSpe
         sharedir.display()
     );
     Ok(spec
+        .env_remove("AR")
+        .env_remove("CC")
+        .env_remove("CPP")
+        .env_remove("CXX")
+        .env_remove("LD")
+        .env_remove("NM")
+        .env_remove("RANLIB")
+        .env_remove("STRIP")
+        .env("PATH", path)
         .env("PKG_CONFIG_ALLOW_CROSS", "1")
         .env("PKG_CONFIG_SYSROOT_DIR", sysroot_dir(ctx)?)
         .env("PKG_CONFIG_LIBDIR", &pkg_config_path)
