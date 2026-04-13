@@ -14,6 +14,7 @@ use crate::make_meta_package;
 use crate::make_package;
 use crate::misc::sysroot_dir;
 use crate::make_autotools_packages;
+use crate::package::feh::Imlib2;
 
 use crate::package::xorg::{
     Freetype2, GuiPackage, LibSm, LibX11, LibXext, LibXfixes, LibXinerama, LibXrandr, LibXrender,
@@ -273,7 +274,7 @@ make_autotools_package!(
     Dwm,
     "dwm",
     git_url = "https://github.com/SeeleOS/dwm",
-    dependencies = [GuiPackage, LibXft, LibXinerama, Fontconfig, Freetype2, Gettext],
+    dependencies = [GuiPackage, LibXft, LibXinerama, Fontconfig, Freetype2, Gettext, Imlib2],
     configure_override = {
     }
 );
