@@ -76,13 +76,13 @@ pub trait Package {
 
     fn calc_paths(&self, ctx: &Context) -> PackagePaths {
         let root = ctx.packages_root.join("work").join(self.name());
+        let patch_root = ctx.packages_root.join("patches");
+        let patch = patch_root.join(format!("{}.patch", self.name()));
+        let diff = patch_root.join(format!("{}.diff", self.name()));
         PackagePaths {
             src: root.join("src"),
             stamp: root.join(".stamp"),
-            patch: ctx
-                .packages_root
-                .join("patches")
-                .join(format!("{}.patch", self.name())),
+            patch: if patch.exists() { patch } else { diff },
             build: root.join("src/build"),
             pkg_specific: ctx.pkg_specific_root.join(self.name()),
             root,
