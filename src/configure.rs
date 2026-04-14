@@ -1,13 +1,14 @@
 use crate::command::{CommandSpec, run};
 use crate::cross::{
-    TARGET_TRIPLE, build_triplet, meson_cross_file, meson_native_file, pkg_env, target_env,
+    TARGET_TRIPLE, build_triplet, meson_cross_file, meson_native_file, meson_vala_wrapper,
+    pkg_env, target_env,
 };
 use crate::fs_utils::ensure_dir;
 use crate::gnu_config::refresh_gnu_config;
 use crate::layout::{
     BINDIR, INCLUDEDIR, LIB_BINARY_DIR, LOCALSTATEDIR, PREFIX, SBINDIR, SYSCONFDIR, relative_dir,
 };
-use crate::libtool::fix_libtool_scripts;
+use crate::libtool::{fix_libtool_inputs, fix_libtool_scripts};
 use crate::misc::sysroot_dir;
 use crate::r#trait::Package;
 use crate::types::{Context, Result};
@@ -74,6 +75,7 @@ pub fn configure_autotools_in<'a>(
     extra_dynamic: Vec<String>,
 ) -> Result<()> {
     refresh_gnu_config(ctx, source_dir)?;
+    fix_libtool_inputs(source_dir)?;
     let mut cmd = with_autotools_layout(target_env(spec, ctx)?)
         .arg(format!("--build={}", build_triplet(source_dir)?))
         .arg(format!("--host={TARGET_TRIPLE}"))
@@ -99,8 +101,14 @@ pub fn configure_meson(
 ) -> Result<()> {
     let paths = pkg.calc_paths(ctx);
     ensure_dir(&paths.build)?;
+    let vala = meson_vala_wrapper(ctx, &paths)?;
+    let meson_link_args = format!(
+        "['-L{}', '-Wl,-rpath-link,{}', '-lunwind']",
+        ctx.lib_binary_dir.display(),
+        ctx.lib_binary_dir.display()
+    );
     let mut cmd = with_meson_layout(with_envs(
-        pkg_env(CommandSpec::new("meson").arg("setup").cwd(&paths.root), ctx)?,
+        target_env(CommandSpec::new("meson").arg("setup").cwd(&paths.root), ctx)?,
         envs,
     ))
     .arg(&paths.build)
@@ -116,7 +124,13 @@ pub fn configure_meson(
     ))
     .arg("--buildtype=release")
     .arg("--wrap-mode=nodownload")
-    .arg("-Ddefault_library=shared");
+    .arg("-Ddefault_library=shared")
+    .arg(format!("-Dc_link_args={meson_link_args}"))
+    .arg(format!("-Dcpp_link_args={meson_link_args}"))
+    // Meson's Ninja backend emits a plain `valac` command, so the runtime
+    // PATH must resolve that name to our wrapper for both setup and rebuilds.
+    .env("VALAC", &vala)
+    .env_prepend("PATH", paths.root.display().to_string(), ":");
     for arg in extra_args {
         cmd = cmd.arg(arg);
     }

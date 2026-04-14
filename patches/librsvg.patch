@@ -1,0 +1,53 @@
+From 2fb2aa7ea3dc37c34433a3f1dec22e364f60da6e Mon Sep 17 00:00:00 2001
+From: codex <codex@example.com>
+Date: Tue, 14 Apr 2026 16:03:57 +0800
+Subject: [PATCH] meson: add option to disable command-line tools
+
+---
+ meson.build       | 5 ++++-
+ meson_options.txt | 6 ++++++
+ 2 files changed, 10 insertions(+), 1 deletion(-)
+
+diff --git a/meson.build b/meson.build
+index fb2b1fc..2907928 100644
+--- a/meson.build
++++ b/meson.build
+@@ -167,6 +167,7 @@ build_pixbuf_loader = get_option('pixbuf-loader').require(pixbuf_dep.found())
+ build_docs = get_option('docs')
+ 
+ build_tests = get_option('tests')
++build_tools = get_option('tools')
+ 
+ gnome = import('gnome')
+ 
+@@ -514,7 +515,9 @@ subdir('rsvg')
+ if build_tests
+   subdir('librsvg-c/tests-c')
+ endif
+-subdir('rsvg_convert')
++if build_tools
++  subdir('rsvg_convert')
++endif
+ if build_pixbuf_loader.allowed()
+   subdir('gdk-pixbuf-loader')
+ endif
+diff --git a/meson_options.txt b/meson_options.txt
+index a044ae6..70fa9a2 100644
+--- a/meson_options.txt
++++ b/meson_options.txt
+@@ -38,6 +38,12 @@ option('tests',
+        yield: true,
+        description: 'Build the test suite')
+ 
++option('tools',
++       type: 'boolean',
++       value: true,
++       yield: true,
++       description: 'Build command-line tools such as rsvg-convert')
++
+ option('triplet',
+        type: 'string',
+        value: '',
+-- 
+2.53.0
+

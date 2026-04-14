@@ -1,45 +1,13 @@
 use crate::{
     command::{CommandSpec, make, run},
     configure::with_envs,
-    cross::{pkg_env, target_env},
-    fs_utils::{copy_dir_contents, ensure_dir},
-    layout::LIBDIR,
+    cross::{meson_vala_wrapper, pkg_env, target_env},
     r#trait::Package,
     types::{Context, Result},
 };
-use std::{path::Path, sync::atomic::AtomicBool};
+use std::path::Path;
 
 pub const CC: &str = "clang --target=x86_64-seele";
-static RELIBC_INSTALLED: AtomicBool = AtomicBool::new(false);
-
-pub fn build_relibc(ctx: &Context) -> Result<()> {
-    if !RELIBC_INSTALLED.load(std::sync::atomic::Ordering::Relaxed) {
-        RELIBC_INSTALLED.store(true, std::sync::atomic::Ordering::Relaxed);
-
-        run(make()
-            .cwd(&ctx.relibc_root)
-            .env_remove("CARGO")
-            .env_remove("CARGO_MANIFEST_DIR")
-            .env_remove("CARGO_MANIFEST_PATH")
-            .env_remove("RUSTUP_TOOLCHAIN")
-            .env_remove("RUST_RECURSION_COUNT")
-            .arg("all"))?;
-    }
-
-    sync_staging_libs(ctx)
-}
-
-fn sync_staging_libs(ctx: &Context) -> Result<()> {
-    let src = ctx.real_sysroot_dir.join(LIBDIR.trim_start_matches('/'));
-    let dst = ctx.staging_sysroot_dir.join(LIBDIR.trim_start_matches('/'));
-
-    if !src.is_dir() {
-        return Err(format!("real sysroot libs dir not found: {}", src.display()).into());
-    }
-
-    ensure_dir(&dst)?;
-    copy_dir_contents(&src, &dst)
-}
 
 pub fn build_autotools_with(
     pkg: &dyn Package,
@@ -57,6 +25,7 @@ pub fn build_autotools_with(
 
 pub fn build_meson(pkg: &dyn Package, ctx: &Context) -> Result<()> {
     let paths = pkg.calc_paths(ctx);
+    let vala = meson_vala_wrapper(ctx, &paths)?;
     let jobs = std::thread::available_parallelism()
         .map(|count| count.get())
         .unwrap_or(1);
@@ -65,7 +34,9 @@ pub fn build_meson(pkg: &dyn Package, ctx: &Context) -> Result<()> {
             .arg("compile")
             .arg("-C")
             .arg(&paths.build)
-            .arg(format!("-j{jobs}")),
+            .arg(format!("-j{jobs}"))
+            .env("VALAC", &vala)
+            .env_prepend("PATH", paths.root.display().to_string(), ":"),
         ctx,
     )?)
 }

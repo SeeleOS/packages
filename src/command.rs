@@ -130,6 +130,29 @@ impl<'a> CommandSpec<'a> {
         self
     }
 
+    pub fn env_prepend(
+        mut self,
+        key: impl Into<String>,
+        val: impl Into<OsString>,
+        separator: &str,
+    ) -> Self {
+        let key = key.into();
+        let val = val.into();
+        if let Some((_, existing)) = self.envs.iter_mut().rev().find(|(k, _)| *k == key) {
+            if !existing.is_empty() && !val.is_empty() {
+                let mut merged = val;
+                merged.push(separator);
+                merged.push(existing.clone());
+                *existing = merged;
+            } else if !val.is_empty() {
+                *existing = val;
+            }
+        } else {
+            self.envs.push((key, val));
+        }
+        self
+    }
+
     pub fn env_remove(mut self, key: impl Into<String>) -> Self {
         self.env_removes.push(key.into());
         self

@@ -4,7 +4,6 @@ use std::fs;
 use std::collections::HashSet;
 use std::sync::{Mutex, OnceLock};
 
-use crate::build::build_relibc;
 use crate::command::{CommandSpec, run_output};
 use crate::fs_utils::{ensure_dir, list_patch_files};
 use crate::install::deploy_sysroot;
@@ -133,8 +132,6 @@ pub trait Package {
                 dep.make(ctx)?;
             }
         }
-
-        build_relibc(ctx)?;
 
         let paths = self.calc_paths(ctx);
         paths.ensure()?;

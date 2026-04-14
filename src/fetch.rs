@@ -1,7 +1,7 @@
 use std::fs;
 
 use crate::command::{CommandSpec, run};
-use crate::fs_utils::{download_file, ensure_dir, remove_path_if_exists};
+use crate::fs_utils::{download_file, ensure_dir};
 use crate::r#trait::Package;
 use crate::types::{Context, Result};
 
@@ -33,8 +33,9 @@ pub trait TarballFetch: Package {
         if paths.src.exists() {
             fs::remove_dir_all(&paths.src)?;
         }
-        remove_path_if_exists(&tarball)?;
-        download_file(&tarball, &self.tarball_url(), &paths.root)?;
+        if !tarball.exists() {
+            download_file(&tarball, &self.tarball_url(), &paths.root)?;
+        }
 
         ensure_dir(&paths.src)?;
         run(CommandSpec::new("tar")

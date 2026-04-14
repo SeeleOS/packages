@@ -1,0 +1,52 @@
+From 14b68e123478629685f0eebae09780c6ab9e6e4a Mon Sep 17 00:00:00 2001
+From: Codex <codex@example.com>
+Date: Tue, 14 Apr 2026 15:06:17 +0800
+Subject: [PATCH] Support Seele system info
+
+---
+ src/as-system-info.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/src/as-system-info.c b/src/as-system-info.c
+index 0c7e27c..1c4f742 100644
+--- a/src/as-system-info.c
++++ b/src/as-system-info.c
+@@ -47,7 +47,7 @@
+ #include <dirent.h>
+ #include <glib.h>
+ 
+-#if defined(__linux__)
++#if defined(__linux__) || defined(__seele__)
+ #include <sys/sysinfo.h>
+ #elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__APPLE__)
+ #include <sys/types.h>
+@@ -470,7 +470,7 @@ as_system_info_set_kernel (AsSystemInfo *sysinfo, const gchar *name, const gchar
+ static gulong
+ as_get_physical_memory_total (void)
+ {
+-#if defined(__linux__)
++#if defined(__linux__) || defined(__seele__)
+ 	struct sysinfo si = { 0 };
+ 	sysinfo (&si);
+ 	if (si.mem_unit > 0)
+@@ -557,7 +557,7 @@ as_system_info_set_memory_total (AsSystemInfo *sysinfo, gulong size_mib)
+ 	priv->memory_total = size_mib;
+ }
+ 
+-#if defined(__linux__)
++#if defined(__linux__) || defined(__seele__)
+ /**
+  * as_system_info_populate_modaliases_map_cb:
+  */
+@@ -624,7 +624,7 @@ as_system_info_populate_modaliases_map_cb (AsSystemInfo *sysinfo, const gchar *r
+ static void
+ as_system_info_populate_modaliases (AsSystemInfo *sysinfo)
+ {
+-#if defined(__linux__)
++#if defined(__linux__) || defined(__seele__)
+ 	AsSystemInfoPrivate *priv = GET_PRIVATE (sysinfo);
+ 	GHashTableIter ht_iter;
+ 	gpointer ht_key;
+-- 
+2.53.0
+

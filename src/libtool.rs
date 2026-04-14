@@ -25,6 +25,54 @@ fn set_shell_var(script: &mut String, key: &str, value: &str) {
     }
 }
 
+fn patch_libtool_platform_cases(content: &mut String) {
+    const REPLACEMENTS: &[(&str, &str)] = &[
+        (
+            "linux* | k*bsd*-gnu | kopensolaris*-gnu | gnu*)",
+            "linux* | k*bsd*-gnu | kopensolaris*-gnu | gnu* | seele-gnu)",
+        ),
+        (
+            "gnu* | linux* | tpf* | k*bsd*-gnu | kopensolaris*-gnu)",
+            "gnu* | linux* | tpf* | k*bsd*-gnu | kopensolaris*-gnu | seele-gnu)",
+        ),
+        (
+            "linux* | k*bsd*-gnu | gnu*)",
+            "linux* | k*bsd*-gnu | gnu* | seele-gnu)",
+        ),
+        (
+            "*linux*|cygwin*|msys*|gnu*)",
+            "*linux*|cygwin*|msys*|gnu*|seele-gnu)",
+        ),
+        ("    linux*)", "    linux* | seele-gnu)"),
+    ];
+
+    for (from, to) in REPLACEMENTS {
+        if content.contains(from) {
+            *content = content.replace(from, to);
+        }
+    }
+}
+
+pub fn fix_libtool_inputs(root: &Path) -> Result<()> {
+    let mut files = Vec::new();
+    walk_files(root, &mut files)?;
+    for file in files {
+        let Some(name) = file.file_name().and_then(|name| name.to_str()) else {
+            continue;
+        };
+        if !matches!(name, "configure" | "aclocal.m4" | "libtool.m4") {
+            continue;
+        }
+        let mut content = fs::read_to_string(&file)?;
+        let original = content.clone();
+        patch_libtool_platform_cases(&mut content);
+        if content != original {
+            fs::write(&file, content)?;
+        }
+    }
+    Ok(())
+}
+
 pub fn fix_libtool_scripts(root: &Path) -> Result<()> {
     let mut files = Vec::new();
     walk_files(root, &mut files)?;
@@ -53,7 +101,11 @@ pub fn fix_libtool_scripts(root: &Path) -> Result<()> {
             "'${libname}${release}${shared_ext}$major'",
         );
         set_shell_var(&mut content, "dynamic_linker", "'Seele ld.so'");
-        set_shell_var(&mut content, "shlibpath_var", "LD_LIBRARY_PATH");
+        // Cross builds must not teach libtool to preload target shared objects
+        // into host-side helper programs like ln/install during `make install`.
+        // We never execute target binaries on the build machine here, so leaving
+        // shlibpath_var empty is the correct behavior.
+        set_shell_var(&mut content, "shlibpath_var", "");
         if content != original {
             fs::write(&file, content)?;
         }

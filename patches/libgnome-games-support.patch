@@ -1,0 +1,38 @@
+From 3eaf08e4625033a2e0154b9a9ac9d3e3a4419a2b Mon Sep 17 00:00:00 2001
+From: codex <codex@example.com>
+Date: Tue, 14 Apr 2026 16:13:42 +0800
+Subject: [PATCH] meson: add tests option
+
+---
+ meson.build       | 4 +++-
+ meson_options.txt | 6 ++++++
+ 2 files changed, 9 insertions(+), 1 deletion(-)
+ create mode 100644 meson_options.txt
+
+diff --git a/meson.build b/meson.build
+index 022707a..f4fbb78 100644
+--- a/meson.build
++++ b/meson.build
+@@ -46,4 +46,6 @@ configure_file(output: 'config.h', configuration: conf)
+ 
+ subdir('po')
+ subdir('games')
+-subdir('tests')
++if get_option('tests')
++  subdir('tests')
++endif
+diff --git a/meson_options.txt b/meson_options.txt
+new file mode 100644
+index 0000000..6552029
+--- /dev/null
++++ b/meson_options.txt
+@@ -0,0 +1,6 @@
++option(
++  'tests',
++  type: 'boolean',
++  value: true,
++  description: 'Build test binaries'
++)
+-- 
+2.53.0
+

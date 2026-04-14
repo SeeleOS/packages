@@ -19,10 +19,10 @@ pub fn remove_if_exists(path: &Path) -> Result<()> {
 }
 
 pub fn remove_path_if_exists(path: &Path) -> Result<()> {
-    if !path.exists() {
+    let Ok(metadata) = fs::symlink_metadata(path) else {
         return Ok(());
-    }
-    if path.is_dir() {
+    };
+    if metadata.is_dir() {
         fs::remove_dir_all(path)?;
     } else {
         fs::remove_file(path)?;
@@ -114,6 +114,11 @@ pub fn download_file(target: &Path, urls: &[&str], cwd: &Path) -> Result<()> {
             run(CommandSpec::new("curl")
                 .arg("-L")
                 .arg("-f")
+                .arg("--retry")
+                .arg("10")
+                .arg("--retry-all-errors")
+                .arg("--retry-delay")
+                .arg("2")
                 .arg("-o")
                 .arg(target)
                 .arg(url)
