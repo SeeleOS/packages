@@ -1,5 +1,7 @@
 use std::fs;
 use std::path::{Path, PathBuf};
+#[cfg(unix)]
+use std::os::unix::fs::PermissionsExt;
 
 use crate::command::{CommandSpec, capture};
 use crate::misc::sysroot_dir;
@@ -128,4 +130,55 @@ pub fn meson_cross_file(ctx: &Context, paths: &PackagePaths) -> Result<PathBuf> 
         ),
     )?;
     Ok(cross_file)
+}
+
+/// Create a build-machine `pkg-config` wrapper for Meson's `native: true`
+/// lookups.
+///
+/// Our normal cross environment points `pkg-config` at the target sysroot so
+/// target libraries resolve correctly. Meson uses the native file for build
+/// machine tools and dependencies, so reusing that cross `pkg-config`
+/// environment would incorrectly resolve host-side tools against target `.pc`
+/// files.
+pub fn meson_native_pkg_config(ctx: &Context, paths: &PackagePaths) -> Result<PathBuf> {
+    let wrapper = paths.root.join("build-pkg-config");
+    let path = std::env::var("PATH").unwrap_or_default();
+    fs::write(
+        &wrapper,
+        format!(
+            "#!/bin/sh\n\
+# Meson `native: true` lookups must resolve against the build machine,
+# not the target sysroot pkg-config environment we export for cross builds.\n\
+unset PKG_CONFIG_ALLOW_CROSS\n\
+unset PKG_CONFIG_SYSROOT_DIR\n\
+unset PKG_CONFIG_LIBDIR\n\
+unset PKG_CONFIG_PATH_FOR_TARGET\n\
+exec env PATH='{path}' pkg-config \"$@\"\n"
+        ),
+    )?;
+    #[cfg(unix)]
+    fs::set_permissions(&wrapper, fs::Permissions::from_mode(0o755))?;
+    let _ = ctx;
+    Ok(wrapper)
+}
+
+/// Generate the Meson native file used for build-machine resolution.
+///
+/// The cross file describes the target/host machine that the produced binaries
+/// will run on. This native file is the matching build-machine view that Meson
+/// uses when upstream marks programs or dependencies with `native: true`.
+pub fn meson_native_file(ctx: &Context, paths: &PackagePaths) -> Result<PathBuf> {
+    let native_file = paths.root.join("native.ini");
+    let build_pkg_config = meson_native_pkg_config(ctx, paths)?;
+    fs::write(
+        &native_file,
+        format!(
+            "[binaries]\n\
+# Meson uses this file for build-machine tools and dependencies requested
+# with `native: true`.\n\
+pkg-config = '{}'\n",
+            build_pkg_config.display()
+        ),
+    )?;
+    Ok(native_file)
 }

@@ -1,5 +1,7 @@
 use crate::command::{CommandSpec, run};
-use crate::cross::{TARGET_TRIPLE, build_triplet, meson_cross_file, pkg_env, target_env};
+use crate::cross::{
+    TARGET_TRIPLE, build_triplet, meson_cross_file, meson_native_file, pkg_env, target_env,
+};
 use crate::fs_utils::ensure_dir;
 use crate::gnu_config::refresh_gnu_config;
 use crate::layout::{
@@ -105,6 +107,11 @@ pub fn configure_meson(
     .arg(format!(
         "--cross-file={}",
         meson_cross_file(ctx, &paths)?.display()
+    ))
+    // Keep Meson's build-machine lookups separate from target pkg-config.
+    .arg(format!(
+        "--native-file={}",
+        meson_native_file(ctx, &paths)?.display()
     ))
     .arg("--buildtype=release")
     .arg("--wrap-mode=nodownload")
