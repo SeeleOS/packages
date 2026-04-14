@@ -1,0 +1,25 @@
+From 3917c8a4c53cd37b7c6bd06efb6f5eb4df4d317c Mon Sep 17 00:00:00 2001
+From: codex <codex@example.invalid>
+Date: Tue, 14 Apr 2026 11:52:53 +0800
+Subject: [PATCH] meson: use native glib-compile-resources
+
+---
+ meson.build | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/meson.build b/meson.build
+index 3eb3fcc..07e081c 100644
+--- a/meson.build
++++ b/meson.build
+@@ -381,7 +381,7 @@ gen_installed_test = find_program('build-aux/gen-installed-test.py')
+ gen_thumbnailer = find_program('build-aux/gen-thumbnailer.py')
+ 
+ # Needed by gen-resources.py
+-glib_compile_resources = find_program('glib-compile-resources')
++glib_compile_resources = find_program('glib-compile-resources', native: true)
+ 
+ gnome = import('gnome')
+ 
+-- 
+2.53.0
+

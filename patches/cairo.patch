@@ -1,0 +1,26 @@
+diff --git a/src/cairo-xlib-surface-shm.c b/src/cairo-xlib-surface-shm.c
+index 85a0369..5f69df2 100644
+--- a/src/cairo-xlib-surface-shm.c
++++ b/src/cairo-xlib-surface-shm.c
+@@ -42,7 +42,7 @@
+ #include "cairo-xlib-private.h"
+ #include "cairo-xlib-surface-private.h"
+ 
+-#if !HAVE_X11_EXTENSIONS_XSHM_H || !(HAVE_X11_EXTENSIONS_SHMPROTO_H || HAVE_X11_EXTENSIONS_SHMSTR_H)
++#if !HAVE_X11_EXTENSIONS_XSHM_H || !(HAVE_X11_EXTENSIONS_SHMPROTO_H || HAVE_X11_EXTENSIONS_SHMSTR_H) || !__has_include(<sys/ipc.h>) || !__has_include(<sys/shm.h>)
+ void _cairo_xlib_display_init_shm (cairo_xlib_display_t *display)
+ {
+     display->shm = NULL;
+diff --git a/src/cairo-xlib-surface.c b/src/cairo-xlib-surface.c
+index fac2911..6fdc779 100644
+--- a/src/cairo-xlib-surface.c
++++ b/src/cairo-xlib-surface.c
+@@ -78,8 +78,6 @@
+ #include <X11/Xutil.h> /* for XDestroyImage */
+ 
+ #include <X11/extensions/XShm.h>
+-#include <sys/ipc.h>
+-#include <sys/shm.h>
+ 
+ #define DEBUG 0
+ 

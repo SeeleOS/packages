@@ -72,6 +72,7 @@ fn package_by_name(name: &str) -> Option<Box<dyn Package>> {
         "imlib2" => Some(Box::new(Imlib2)),
         "atk" => Some(Box::new(gtk::Atk)),
         "cairo" => Some(Box::new(gtk::Cairo)),
+        "epoxy" | "libepoxy" => Some(Box::new(gtk::LibEpoxy)),
         "gdk-pixbuf" => Some(Box::new(gtk::GdkPixbuf)),
         "libpng" | "png" => Some(Box::new(LibPng)),
         "libxcursor" => Some(Box::new(desktop::LibXcursor)),

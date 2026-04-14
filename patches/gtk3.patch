@@ -1,0 +1,196 @@
+From adfb1211a640632db6436f4d61083e36e3df9468 Mon Sep 17 00:00:00 2001
+From: codex <codex@example.invalid>
+Date: Tue, 14 Apr 2026 11:42:26 +0800
+Subject: [PATCH] seele: fix gtk3 cross build
+
+---
+ gdk/win32/gdkdevicemanager-win32.c | 2 +-
+ gtk/a11y/gtkaccessibility.c        | 4 ++--
+ gtk/gtkcssstaticstyle.c            | 2 +-
+ gtk/gtkfilechooserwidget.c         | 7 +++----
+ gtk/gtkscale.c                     | 2 +-
+ gtk/gtkshortcutsgroup.c            | 4 ++--
+ gtk/meson.build                    | 6 ++++--
+ meson.build                        | 7 +++++--
+ tests/gtkgears.c                   | 4 ++++
+ 9 files changed, 23 insertions(+), 15 deletions(-)
+
+diff --git a/gdk/win32/gdkdevicemanager-win32.c b/gdk/win32/gdkdevicemanager-win32.c
+index 19da420..23929b0 100644
+--- a/gdk/win32/gdkdevicemanager-win32.c
++++ b/gdk/win32/gdkdevicemanager-win32.c
+@@ -418,7 +418,7 @@ winpointer_create_device (GdkDeviceManagerWin32 *device_manager,
+ 
+   if (!winpointer_device_update_scale_factors (device))
+     {
+-      g_set_object (&device, NULL);
++      g_set_object (&device, (gpointer) NULL);
+       goto cleanup;
+     }
+ 
+diff --git a/gtk/a11y/gtkaccessibility.c b/gtk/a11y/gtkaccessibility.c
+index 1b319db..c0abc3c 100644
+--- a/gtk/a11y/gtkaccessibility.c
++++ b/gtk/a11y/gtkaccessibility.c
+@@ -37,7 +37,7 @@
+ #include <gtk/gtktogglebutton.h>
+ #include <gtk/gtkaccessible.h>
+ 
+-#ifdef GDK_WINDOWING_X11
++#if defined(GDK_WINDOWING_X11) && defined(HAVE_ATK_BRIDGE)
+ #include <atk-bridge.h>
+ #endif
+ 
+@@ -986,7 +986,7 @@ _gtk_accessibility_init (void)
+   _gtk_accessibility_override_atk_util ();
+   do_window_event_initialization ();
+ 
+-#ifdef GDK_WINDOWING_X11
++#if defined(GDK_WINDOWING_X11) && defined(HAVE_ATK_BRIDGE)
+   atk_bridge_adaptor_init (NULL, NULL);
+ #endif
+ 
+diff --git a/gtk/gtkcssstaticstyle.c b/gtk/gtkcssstaticstyle.c
+index 1d49402..3046d79 100644
+--- a/gtk/gtkcssstaticstyle.c
++++ b/gtk/gtkcssstaticstyle.c
+@@ -145,7 +145,7 @@ static GtkCssStyle *default_style;
+ static void
+ clear_default_style (gpointer data)
+ {
+-  g_set_object (&default_style, NULL);
++  g_set_object (&default_style, (gpointer) NULL);
+ }
+ 
+ GtkCssStyle *
+diff --git a/gtk/gtkfilechooserwidget.c b/gtk/gtkfilechooserwidget.c
+index a6e2fa2..4b4e890 100644
+--- a/gtk/gtkfilechooserwidget.c
++++ b/gtk/gtkfilechooserwidget.c
+@@ -4826,7 +4826,7 @@ stop_loading_and_clear_list_model (GtkFileChooserWidget *impl,
+ 
+   load_remove_timer (impl, LOAD_EMPTY);
+ 
+-  g_set_object (&priv->browse_files_model, NULL);
++  g_set_object (&priv->browse_files_model, (gpointer) NULL);
+ 
+   if (remove)
+     gtk_tree_view_set_model (GTK_TREE_VIEW (priv->browse_files_tree_view), NULL);
+@@ -7585,7 +7585,7 @@ search_entry_activate_cb (GtkFileChooserWidget *impl)
+   text = gtk_entry_get_text (GTK_ENTRY (priv->search_entry));
+ 
+   /* reset any existing query object */
+-  g_set_object (&priv->search_query, NULL);
++  g_set_object (&priv->search_query, (gpointer) NULL);
+ 
+   gtk_places_view_set_search_query (GTK_PLACES_VIEW (priv->places_view), text);
+ 
+@@ -7646,7 +7646,7 @@ recent_clear_model (GtkFileChooserWidget *impl,
+   if (remove)
+     gtk_tree_view_set_model (GTK_TREE_VIEW (priv->browse_files_tree_view), NULL);
+ 
+-  g_set_object (&priv->recent_model, NULL);
++  g_set_object (&priv->recent_model, (gpointer) NULL);
+ }
+ 
+ /* Stops any ongoing loading of the recent files list; does
+@@ -9053,4 +9053,3 @@ gtk_file_chooser_widget_get_choice (GtkFileChooser  *chooser,
+ 
+   return NULL;
+ }
+-
+diff --git a/gtk/gtkscale.c b/gtk/gtkscale.c
+index bee30ee..b956f28 100644
+--- a/gtk/gtkscale.c
++++ b/gtk/gtkscale.c
+@@ -2092,7 +2092,7 @@ gtk_scale_get_layout_offsets (GtkScale *scale,
+ static void
+ gtk_scale_clear_value_layout (GtkScale *scale)
+ {
+-  g_set_object (&scale->priv->layout, NULL);
++  g_set_object (&scale->priv->layout, (gpointer) NULL);
+ }
+ 
+ static void
+diff --git a/gtk/gtkshortcutsgroup.c b/gtk/gtkshortcutsgroup.c
+index 2ea98e8..9435f46 100644
+--- a/gtk/gtkshortcutsgroup.c
++++ b/gtk/gtkshortcutsgroup.c
+@@ -259,8 +259,8 @@ gtk_shortcuts_group_finalize (GObject *object)
+   GtkShortcutsGroup *self = GTK_SHORTCUTS_GROUP (object);
+ 
+   g_free (self->view);
+-  g_set_object (&self->accel_size_group, NULL);
+-  g_set_object (&self->title_size_group, NULL);
++  g_set_object (&self->accel_size_group, (gpointer) NULL);
++  g_set_object (&self->title_size_group, (gpointer) NULL);
+ 
+   G_OBJECT_CLASS (gtk_shortcuts_group_parent_class)->finalize (object);
+ }
+diff --git a/gtk/meson.build b/gtk/meson.build
+index ea866d8..26481fe 100644
+--- a/gtk/meson.build
++++ b/gtk/meson.build
+@@ -851,7 +851,7 @@ gtk_deps = [
+ ]
+ 
+ if x11_enabled
+-  x11_data_prefix = dependency('x11').get_variable(pkgconfig: 'prefix')
++  x11_data_prefix = '/'
+ 
+   gtk_cargs += [ '-DX11_DATA_PREFIX="@0@"'.format(x11_data_prefix), ]
+   gtk_sources += gtk_use_x11_sources
+@@ -902,7 +902,9 @@ if win32_enabled
+   gtk_res = import('windows').compile_resources(gtk_rc)
+   gtk_sources += gtk_res
+ else
+-  gtk_deps += [ atkbridge_dep, ]
++  if x11_enabled and atkbridge_dep.found()
++    gtk_deps += [ atkbridge_dep, ]
++  endif
+ endif
+ 
+ if quartz_enabled
+diff --git a/meson.build b/meson.build
+index 67b24e5..3ef61a7 100644
+--- a/meson.build
++++ b/meson.build
+@@ -565,7 +565,7 @@ if x11_enabled
+   xfixes_dep     = dependency('xfixes', required: false)
+   xcomposite_dep = dependency('xcomposite', required: false)
+   fontconfig_dep = dependency('fontconfig', fallback: ['fontconfig', 'fontconfig_dep'])
+-  atkbridge_dep  = dependency('atk-bridge-2.0', version: at_spi2_atk_req)
++  atkbridge_dep  = dependency('atk-bridge-2.0', version: at_spi2_atk_req, required: false)
+ 
+   backend_immodules += ['xim']
+ 
+@@ -584,7 +584,10 @@ if x11_enabled
+     x11_pkgs += ['xdamage']
+   endif
+ 
+-  atk_pkgs += ['atk-bridge-2.0']
++  if atkbridge_dep.found()
++    atk_pkgs += ['atk-bridge-2.0']
++  endif
++  cdata.set('HAVE_ATK_BRIDGE', atkbridge_dep.found() ? 1 : false)
+ 
+   cdata.set('HAVE_XDAMAGE', xdamage_dep.found() ? 1 : false)
+   cdata.set('HAVE_XCURSOR', xcursor_dep.found() ? 1 : false)
+diff --git a/tests/gtkgears.c b/tests/gtkgears.c
+index 062b611..0e58eb0 100644
+--- a/tests/gtkgears.c
++++ b/tests/gtkgears.c
+@@ -44,6 +44,10 @@
+ 
+ #include "gtkgears.h"
+ 
++#ifdef HAVE_SINCOS
++extern void sincos (double x, double *_sin, double *_cos);
++#endif
++
+ #define STRIPS_PER_TOOTH 7
+ #define VERTICES_PER_TOOTH 34
+ #define GEAR_VERTEX_STRIDE 6
+-- 
+2.53.0
+
