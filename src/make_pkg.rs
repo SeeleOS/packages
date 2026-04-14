@@ -244,6 +244,7 @@ macro_rules! make_meson_package {
                     $crate::configure::configure_meson(
                         self,
                         ctx,
+                        $crate::make_meson_package!(@cfg_env_from [ $($($cfg)*)? ]),
                         $crate::make_meson_package!(@cfg_args_from [ $($($cfg)*)? ]),
                         ($crate::make_meson_package!(@cfg_dynamic_args_from [ $($($cfg)*)? ]))(ctx),
                     )
@@ -265,6 +266,13 @@ macro_rules! make_meson_package {
             }
         );
     };
+    (@cfg_env_from [ $($items:tt)* ]) => { $crate::make_meson_package!(@find_cfg_env [ $($items)* ]) };
+    (@find_cfg_env [ ]) => { Vec::<(String, String)>::new() };
+    (@find_cfg_env [ env = $value:expr $(, $($rest:tt)*)? ]) => { $value };
+    (@find_cfg_env [ $key:ident = $value:expr, $($rest:tt)* ]) => {
+        $crate::make_meson_package!(@find_cfg_env [ $($rest)* ])
+    };
+    (@find_cfg_env [ $key:ident = $value:expr ]) => { Vec::<(String, String)>::new() };
     (@cfg_args_from [ $($items:tt)* ]) => { $crate::make_meson_package!(@find_cfg_args [ $($items)* ]) };
     (@find_cfg_args [ ]) => { Vec::<String>::new() };
     (@find_cfg_args [ args = $value:expr $(, $($rest:tt)*)? ]) => { $value };

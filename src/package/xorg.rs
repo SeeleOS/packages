@@ -362,6 +362,7 @@ make_package!(
             configure_meson(
                 self,
                 ctx,
+                Vec::new(),
                 vec![
                     "-Dxorg=true".to_string(),
                     "-Dc_args=-w".to_string(),

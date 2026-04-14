@@ -93,15 +93,16 @@ pub fn configure_autotools_in<'a>(
 pub fn configure_meson(
     pkg: &dyn Package,
     ctx: &Context,
+    envs: Vec<(String, String)>,
     extra_args: Vec<String>,
     extra_dynamic: Vec<String>,
 ) -> Result<()> {
     let paths = pkg.calc_paths(ctx);
     ensure_dir(&paths.build)?;
-    let mut cmd = with_meson_layout(pkg_env(
-        CommandSpec::new("meson").arg("setup").cwd(&paths.root),
-        ctx,
-    )?)
+    let mut cmd = with_meson_layout(with_envs(
+        pkg_env(CommandSpec::new("meson").arg("setup").cwd(&paths.root), ctx)?,
+        envs,
+    ))
     .arg(&paths.build)
     .arg(&paths.src)
     .arg(format!(

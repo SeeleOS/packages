@@ -1,0 +1,31 @@
+From acb11f7327488156af752013522050744522a239 Mon Sep 17 00:00:00 2001
+From: codex <codex@example.invalid>
+Date: Tue, 14 Apr 2026 12:30:38 +0800
+Subject: [PATCH] seele: relax math warning flags
+
+---
+ meson.build | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/meson.build b/meson.build
+index ea8e412..9ae78ae 100644
+--- a/meson.build
++++ b/meson.build
+@@ -111,7 +111,8 @@ else
+     '-Werror=return-type',
+     '-Werror=array-bounds',
+     '-Werror=write-strings',
+-    '-Werror=undef',
++    '-Wno-error=undef',
++    '-Wno-nan-infinity-disabled',
+   ]
+ endif
+ 
+@@ -462,4 +463,3 @@ summary({
+   section: 'Build',
+   bool_yn: true,
+ )
+-
+-- 
+2.53.0
+

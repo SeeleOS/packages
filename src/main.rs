@@ -74,6 +74,7 @@ fn package_by_name(name: &str) -> Option<Box<dyn Package>> {
         "cairo" => Some(Box::new(gtk::Cairo)),
         "epoxy" | "libepoxy" => Some(Box::new(gtk::LibEpoxy)),
         "gdk-pixbuf" => Some(Box::new(gtk::GdkPixbuf)),
+        "graphene" => Some(Box::new(gtk::Graphene)),
         "libpng" | "png" => Some(Box::new(LibPng)),
         "libxcursor" => Some(Box::new(desktop::LibXcursor)),
         "libxft" => Some(Box::new(desktop::LibXft)),

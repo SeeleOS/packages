@@ -1,0 +1,596 @@
+From 652a675f162d2aa98627e0d7d33144e6cda007d0 Mon Sep 17 00:00:00 2001
+From: codex <codex@example.invalid>
+Date: Tue, 14 Apr 2026 12:42:33 +0800
+Subject: [PATCH] seele: make optional deps and glib checks compatible
+
+---
+ gdk/gdkconfig.h.meson               |  3 +++
+ gdk/gdkcontentdeserializer.c        |  7 ++++++-
+ gdk/gdkcontentserializer.c          | 13 ++++++++++++-
+ gdk/gdkdmabuf.c                     |  2 +-
+ gdk/gdktexture.c                    | 23 ++++++++++++++++++++++-
+ gdk/meson.build                     | 22 ++++++++++++++++++----
+ gdk/wayland/gdksubsurface-wayland.c |  4 ++--
+ gdk/win32/gdkdrag-win32.c           |  2 +-
+ gdk/win32/gdkinput-winpointer.c     |  2 +-
+ gdk/x11/gdkdisplay-x11.c            | 18 ++++++++++++++++++
+ gdk/x11/meson.build                 |  5 ++++-
+ gtk/deprecated/gtkshortcutsgroup.c  |  4 ++--
+ gtk/gtkcssstaticstyle.c             |  2 +-
+ gtk/gtkfilechooserwidget.c          |  6 +++---
+ gtk/gtkfiledialog.c                 |  4 ++--
+ gtk/gtkwindow.c                     |  2 +-
+ gtk/inspector/general.c             | 10 +++++++---
+ meson.build                         |  4 ++--
+ 18 files changed, 106 insertions(+), 27 deletions(-)
+
+diff --git a/gdk/gdkconfig.h.meson b/gdk/gdkconfig.h.meson
+index 17276e0..407fd6e 100644
+--- a/gdk/gdkconfig.h.meson
++++ b/gdk/gdkconfig.h.meson
+@@ -21,6 +21,9 @@ G_BEGIN_DECLS
+ #mesondefine GDK_RENDERING_GL
+ #mesondefine GDK_RENDERING_VULKAN
+ 
++#mesondefine GDK_HAVE_TIFF
++#mesondefine GDK_HAVE_JPEG
++
+ G_END_DECLS
+ 
+ #endif  /* __GDKCONFIG_H__ */
+diff --git a/gdk/gdkcontentdeserializer.c b/gdk/gdkcontentdeserializer.c
+index e367c93..f3a7a78 100644
+--- a/gdk/gdkcontentdeserializer.c
++++ b/gdk/gdkcontentdeserializer.c
+@@ -27,7 +27,9 @@
+ #include "gdkrgbaprivate.h"
+ #include "gdkprivate.h"
+ #include "loaders/gdkpngprivate.h"
++#ifdef GDK_HAVE_TIFF
+ #include "loaders/gdktiffprivate.h"
++#endif
+ 
+ #include <gdk-pixbuf/gdk-pixbuf.h>
+ 
+@@ -923,16 +925,20 @@ init (void)
+                                      texture_deserializer,
+                                      NULL,
+                                      NULL);
++#ifdef GDK_HAVE_TIFF
+   gdk_content_register_deserializer ("image/tiff",
+                                      GDK_TYPE_TEXTURE,
+                                      texture_deserializer,
+                                      NULL,
+                                      NULL);
++#endif
++#ifdef GDK_HAVE_JPEG
+   gdk_content_register_deserializer ("image/jpeg",
+                                      GDK_TYPE_TEXTURE,
+                                      texture_deserializer,
+                                      NULL,
+                                      NULL);
++#endif
+ 
+ 
+   formats = gdk_pixbuf_get_formats ();
+@@ -1012,4 +1018,3 @@ init (void)
+                                      NULL,
+                                      NULL);
+ }
+-
+diff --git a/gdk/gdkcontentserializer.c b/gdk/gdkcontentserializer.c
+index 72e648c..9fc5a23 100644
+--- a/gdk/gdkcontentserializer.c
++++ b/gdk/gdkcontentserializer.c
+@@ -27,8 +27,12 @@
+ #include "gdktextureprivate.h"
+ #include "gdkrgba.h"
+ #include "loaders/gdkpngprivate.h"
++#ifdef GDK_HAVE_TIFF
+ #include "loaders/gdktiffprivate.h"
++#endif
++#ifdef GDK_HAVE_JPEG
+ #include "loaders/gdkjpegprivate.h"
++#endif
+ #include "gdkmemorytextureprivate.h"
+ #include "gdkprivate.h"
+ 
+@@ -692,10 +696,14 @@ serialize_texture_in_thread (GTask        *task,
+ 
+   if (strcmp (gdk_content_serializer_get_mime_type (serializer), "image/png") == 0)
+     bytes = gdk_save_png (texture);
++#ifdef GDK_HAVE_TIFF
+   else if (strcmp (gdk_content_serializer_get_mime_type (serializer), "image/tiff") == 0)
+     bytes = gdk_save_tiff (texture);
++#endif
++#ifdef GDK_HAVE_JPEG
+   else if (strcmp (gdk_content_serializer_get_mime_type (serializer), "image/jpeg") == 0)
+     bytes = gdk_save_jpeg (texture);
++#endif
+   else
+     g_assert_not_reached ();
+ 
+@@ -983,15 +991,19 @@ init (void)
+                                    texture_serializer,
+                                    NULL, NULL);
+ 
++#ifdef GDK_HAVE_TIFF
+   gdk_content_register_serializer (GDK_TYPE_TEXTURE,
+                                    "image/tiff",
+                                    texture_serializer,
+                                    NULL, NULL);
++#endif
+ 
++#ifdef GDK_HAVE_JPEG
+   gdk_content_register_serializer (GDK_TYPE_TEXTURE,
+                                    "image/jpeg",
+                                    texture_serializer,
+                                    NULL, NULL);
++#endif
+ 
+   formats = gdk_pixbuf_get_formats ();
+ 
+@@ -1082,4 +1094,3 @@ init (void)
+                                    NULL,
+                                    NULL);
+ }
+-
+diff --git a/gdk/gdkdmabuf.c b/gdk/gdkdmabuf.c
+index de8d7d6..d79fa81 100644
+--- a/gdk/gdkdmabuf.c
++++ b/gdk/gdkdmabuf.c
+@@ -25,7 +25,7 @@
+ #include "gdkdmabuftextureprivate.h"
+ #include "gdkmemoryformatprivate.h"
+ 
+-#ifdef HAVE_DMABUF
++#if defined(HAVE_DMABUF) && defined(HAVE_EGL)
+ #include <sys/mman.h>
+ #include <sys/ioctl.h>
+ #include <linux/dma-buf.h>
+diff --git a/gdk/gdktexture.c b/gdk/gdktexture.c
+index 9bd36e2..7f38bdc 100644
+--- a/gdk/gdktexture.c
++++ b/gdk/gdktexture.c
+@@ -61,8 +61,12 @@
+ #include <glib/gi18n-lib.h>
+ #include <graphene.h>
+ #include "loaders/gdkpngprivate.h"
++#ifdef GDK_HAVE_TIFF
+ #include "loaders/gdktiffprivate.h"
++#endif
++#ifdef GDK_HAVE_JPEG
+ #include "loaders/gdkjpegprivate.h"
++#endif
+ 
+ /**
+  * gdk_texture_error_quark:
+@@ -645,8 +649,14 @@ gboolean
+ gdk_texture_can_load (GBytes *bytes)
+ {
+   return gdk_is_png (bytes) ||
++#ifdef GDK_HAVE_JPEG
+          gdk_is_jpeg (bytes) ||
++#endif
++#ifdef GDK_HAVE_TIFF
+          gdk_is_tiff (bytes);
++#else
++         FALSE;
++#endif
+ }
+ 
+ static GdkTexture *
+@@ -657,14 +667,18 @@ gdk_texture_new_from_bytes_internal (GBytes  *bytes,
+     {
+       return gdk_load_png (bytes, NULL, error);
+     }
++#ifdef GDK_HAVE_JPEG
+   else if (gdk_is_jpeg (bytes))
+     {
+       return gdk_load_jpeg (bytes, error);
+     }
++#endif
++#ifdef GDK_HAVE_TIFF
+   else if (gdk_is_tiff (bytes))
+     {
+       return gdk_load_tiff (bytes, error);
+     }
++#endif
+   else
+     {
+       g_set_error_literal (error,
+@@ -1186,6 +1200,9 @@ gboolean
+ gdk_texture_save_to_tiff (GdkTexture  *texture,
+                           const char  *filename)
+ {
++#ifndef GDK_HAVE_TIFF
++  return FALSE;
++#else
+   GBytes *bytes;
+   gboolean result;
+ 
+@@ -1200,6 +1217,7 @@ gdk_texture_save_to_tiff (GdkTexture  *texture,
+   g_bytes_unref (bytes);
+ 
+   return result;
++#endif
+ }
+ 
+ /**
+@@ -1226,8 +1244,11 @@ gdk_texture_save_to_tiff (GdkTexture  *texture,
+ GBytes *
+ gdk_texture_save_to_tiff_bytes (GdkTexture *texture)
+ {
++#ifndef GDK_HAVE_TIFF
++  return NULL;
++#else
+   g_return_val_if_fail (GDK_IS_TEXTURE (texture), NULL);
+ 
+   return gdk_save_tiff (texture);
++#endif
+ }
+-
+diff --git a/gdk/meson.build b/gdk/meson.build
+index 5653aac..783288c 100644
+--- a/gdk/meson.build
++++ b/gdk/meson.build
+@@ -71,10 +71,16 @@ gdk_public_sources = files([
+   'gdktoplevel.c',
+   'gdkvulkancontext.c',
+   'loaders/gdkpng.c',
+-  'loaders/gdktiff.c',
+-  'loaders/gdkjpeg.c',
+ ])
+ 
++if tiff_dep.found()
++  gdk_public_sources += files('loaders/gdktiff.c')
++endif
++
++if jpeg_dep.found()
++  gdk_public_sources += files('loaders/gdkjpeg.c')
++endif
++
+ gdk_public_headers = files([
+   'gdk.h',
+   'gdkapplaunchcontext.h',
+@@ -192,6 +198,8 @@ gdkconfig_cdata.set('GDK_WINDOWING_MACOS', macos_enabled)
+ gdkconfig_cdata.set('GDK_RENDERING_CAIRO', true)
+ gdkconfig_cdata.set('GDK_RENDERING_GL', true)
+ gdkconfig_cdata.set('GDK_RENDERING_VULKAN', have_vulkan)
++gdkconfig_cdata.set('GDK_HAVE_TIFF', tiff_dep.found())
++gdkconfig_cdata.set('GDK_HAVE_JPEG', jpeg_dep.found())
+ 
+ gdkconfig = configure_file(
+   input: 'gdkconfig.h.meson',
+@@ -237,10 +245,16 @@ gdk_deps = [
+   vulkan_dep,
+   libdrm_dep,
+   png_dep,
+-  tiff_dep,
+-  jpeg_dep,
+ ]
+ 
++if tiff_dep.found()
++  gdk_deps += tiff_dep
++endif
++
++if jpeg_dep.found()
++  gdk_deps += jpeg_dep
++endif
++
+ if profiler_enabled
+   if libsysprof_capture_dep.found()
+     gdk_deps += [libsysprof_capture_dep]
+diff --git a/gdk/wayland/gdksubsurface-wayland.c b/gdk/wayland/gdksubsurface-wayland.c
+index 82fd9e8..296af62 100644
+--- a/gdk/wayland/gdksubsurface-wayland.c
++++ b/gdk/wayland/gdksubsurface-wayland.c
+@@ -721,7 +721,7 @@ gdk_wayland_subsurface_attach (GdkSubsurface         *sub,
+     }
+   else
+     {
+-      if (g_set_object (&self->texture, NULL))
++      if (g_set_object (&self->texture, (gpointer) NULL))
+         {
+           wl_surface_attach (self->surface, NULL, 0, 0);
+           needs_commit = TRUE;
+@@ -785,7 +785,7 @@ gdk_wayland_subsurface_detach (GdkSubsurface *sub)
+       return;
+     }
+ 
+-  g_set_object (&self->texture, NULL);
++  g_set_object (&self->texture, (gpointer) NULL);
+   wl_surface_attach (self->surface, NULL, 0, 0);
+   wl_surface_set_opaque_region (self->surface, self->opaque_region);
+   wl_surface_commit (self->surface);
+diff --git a/gdk/win32/gdkdrag-win32.c b/gdk/win32/gdkdrag-win32.c
+index 6a23ca6..57144e1 100644
+--- a/gdk/win32/gdkdrag-win32.c
++++ b/gdk/win32/gdkdrag-win32.c
+@@ -765,7 +765,7 @@ gdk_win32_drag_finalize (GObject *object)
+ 
+   gdk_drag_set_cursor (drag, NULL);
+ 
+-  g_set_object (&drag_win32->grab_surface, NULL);
++  g_set_object (&drag_win32->grab_surface, (gpointer) NULL);
+   drag_surface = drag_win32->drag_surface;
+ 
+   G_OBJECT_CLASS (gdk_win32_drag_parent_class)->finalize (object);
+diff --git a/gdk/win32/gdkinput-winpointer.c b/gdk/win32/gdkinput-winpointer.c
+index c79d587..dab1778 100644
+--- a/gdk/win32/gdkinput-winpointer.c
++++ b/gdk/win32/gdkinput-winpointer.c
+@@ -838,7 +838,7 @@ winpointer_create_device (GdkDeviceManagerWin32 *device_manager,
+ 
+   if (!winpointer_device_update_scale_factors (device, device_manager))
+     {
+-      g_set_object (&device, NULL);
++      g_set_object (&device, (gpointer) NULL);
+       goto cleanup;
+     }
+ 
+diff --git a/gdk/x11/gdkdisplay-x11.c b/gdk/x11/gdkdisplay-x11.c
+index b6384ae..2f1f1b5 100644
+--- a/gdk/x11/gdkdisplay-x11.c
++++ b/gdk/x11/gdkdisplay-x11.c
+@@ -56,7 +56,9 @@
+ #include <errno.h>
+ #include <unistd.h>
+ 
++#ifdef HAVE_EGL
+ #include <epoxy/egl.h>
++#endif
+ 
+ #include <X11/Xatom.h>
+ #include <X11/Xlibint.h>
+@@ -2943,6 +2945,7 @@ visual_is_rgba (XVisualInfo *visinfo)
+     visinfo->visual->blue_mask  == 0x0000ff;
+ }
+ 
++#ifdef HAVE_EGL
+ static guint
+ gdk_x11_display_rate_egl_config (GdkDisplay *display,
+                                  gpointer    egl_display,
+@@ -2969,6 +2972,7 @@ gdk_x11_display_rate_egl_config (GdkDisplay *display,
+ 
+   return distance;
+ }
++#endif
+ 
+ static gboolean
+ gdk_x11_display_init_gl_backend (GdkX11Display  *self,
+@@ -2978,9 +2982,13 @@ gdk_x11_display_init_gl_backend (GdkX11Display  *self,
+ {
+   GdkDisplay *display = GDK_DISPLAY (self);
+   Display *dpy = gdk_x11_display_get_xdisplay (GDK_DISPLAY (self));
++#ifdef HAVE_EGL
+   EGLDisplay egl_display;
++#endif
+   XVisualInfo *visinfo;
++#ifdef HAVE_EGL
+   int visualid;
++#endif
+ 
+   /* No env vars set, do the regular GL initialization.
+    * 
+@@ -2993,6 +3001,7 @@ gdk_x11_display_init_gl_backend (GdkX11Display  *self,
+    * EGL, we want to avoid using it in favor of GLX.
+    */
+ 
++#ifdef HAVE_EGL
+   if (!gdk_display_init_egl (display, EGL_PLATFORM_X11_KHR, dpy, FALSE, error))
+     {
+       g_clear_error (error);
+@@ -3025,6 +3034,9 @@ gdk_x11_display_init_gl_backend (GdkX11Display  *self,
+   XFree (visinfo);
+ 
+   return TRUE;
++#else
++  return gdk_x11_display_init_glx (self, out_visual, out_depth, error);
++#endif
+ }
+ 
+ static GdkGLContext *
+@@ -3041,7 +3053,11 @@ gdk_x11_display_init_gl (GdkDisplay  *display,
+   if (self->glx_config != NULL)
+     return g_object_new (GDK_TYPE_X11_GL_CONTEXT_GLX, "surface", self->leader_gdk_surface, NULL);
+   else if (gdk_display_get_egl_display (display))
++#ifdef HAVE_EGL
+     return g_object_new (GDK_TYPE_X11_GL_CONTEXT_EGL, "surface", self->leader_gdk_surface, NULL);
++#else
++    g_return_val_if_reached (NULL);
++#endif
+   else
+     g_return_val_if_reached (NULL);
+ }
+@@ -3079,7 +3095,9 @@ G_GNUC_END_IGNORE_DEPRECATIONS
+   display_class->get_keymap = gdk_x11_display_get_keymap;
+ 
+   display_class->init_gl = gdk_x11_display_init_gl;
++#ifdef HAVE_EGL
+   display_class->rate_egl_config = gdk_x11_display_rate_egl_config;
++#endif
+ 
+   display_class->get_default_seat = gdk_x11_display_get_default_seat;
+ 
+diff --git a/gdk/x11/meson.build b/gdk/x11/meson.build
+index c9aa538..4fb5540 100644
+--- a/gdk/x11/meson.build
++++ b/gdk/x11/meson.build
+@@ -8,7 +8,6 @@ gdk_x11_public_sources = files([
+   'gdkdevicemanager-x11.c',
+   'gdkdevicemanager-xi2.c',
+   'gdkdisplay-x11.c',
+-  'gdkglcontext-egl.c',
+   'gdkglcontext-glx.c',
+   'gdkglcontext-x11.c',
+   'gdkkeys-x11.c',
+@@ -21,6 +20,10 @@ gdk_x11_public_sources = files([
+   'xsettings-client.c',
+ ])
+ 
++if have_egl
++  gdk_x11_public_sources += files('gdkglcontext-egl.c')
++endif
++
+ # All sources
+ gdk_x11_sources = gdk_x11_public_sources + [
+   'gdkapplaunchcontext-x11.c',
+diff --git a/gtk/deprecated/gtkshortcutsgroup.c b/gtk/deprecated/gtkshortcutsgroup.c
+index b214f9b..3ff9a3c 100644
+--- a/gtk/deprecated/gtkshortcutsgroup.c
++++ b/gtk/deprecated/gtkshortcutsgroup.c
+@@ -252,8 +252,8 @@ gtk_shortcuts_group_finalize (GObject *object)
+   GtkShortcutsGroup *self = GTK_SHORTCUTS_GROUP (object);
+ 
+   g_free (self->view);
+-  g_set_object (&self->accel_size_group, NULL);
+-  g_set_object (&self->title_size_group, NULL);
++  g_set_object (&self->accel_size_group, (gpointer) NULL);
++  g_set_object (&self->title_size_group, (gpointer) NULL);
+ 
+   G_OBJECT_CLASS (gtk_shortcuts_group_parent_class)->finalize (object);
+ }
+diff --git a/gtk/gtkcssstaticstyle.c b/gtk/gtkcssstaticstyle.c
+index 59bbd82..71ee476 100644
+--- a/gtk/gtkcssstaticstyle.c
++++ b/gtk/gtkcssstaticstyle.c
+@@ -629,7 +629,7 @@ static GtkCssStyle *default_style;
+ static void
+ clear_default_style (gpointer data)
+ {
+-  g_set_object (&default_style, NULL);
++  g_set_object (&default_style, (gpointer) NULL);
+ }
+ 
+ GtkCssStyle *
+diff --git a/gtk/gtkfilechooserwidget.c b/gtk/gtkfilechooserwidget.c
+index f5f2e28..e22a5dc 100644
+--- a/gtk/gtkfilechooserwidget.c
++++ b/gtk/gtkfilechooserwidget.c
+@@ -3715,7 +3715,7 @@ stop_loading_and_clear_list_model (GtkFileChooserWidget *impl,
+ {
+   load_remove_timer (impl, LOAD_EMPTY);
+ 
+-  g_set_object (&impl->browse_files_model, NULL);
++  g_set_object (&impl->browse_files_model, (gpointer) NULL);
+ 
+   if (remove)
+     set_current_model (impl, NULL);
+@@ -5873,7 +5873,7 @@ search_entry_activate_cb (GtkFileChooserWidget *impl)
+   text = gtk_editable_get_text (GTK_EDITABLE (impl->search_entry));
+ 
+   /* reset any existing query object */
+-  g_set_object (&impl->search_query, NULL);
++  g_set_object (&impl->search_query, (gpointer) NULL);
+ 
+   gtk_places_view_set_search_query (GTK_PLACES_VIEW (impl->places_view), text);
+ 
+@@ -5933,7 +5933,7 @@ recent_clear_model (GtkFileChooserWidget *impl,
+   if (remove)
+     set_current_model (impl, NULL);
+ 
+-  g_set_object (&impl->recent_model, NULL);
++  g_set_object (&impl->recent_model, (gpointer) NULL);
+ }
+ 
+ static void
+diff --git a/gtk/gtkfiledialog.c b/gtk/gtkfiledialog.c
+index f87516e..437648f 100644
+--- a/gtk/gtkfiledialog.c
++++ b/gtk/gtkfiledialog.c
+@@ -733,9 +733,9 @@ gtk_file_dialog_set_initial_file (GtkFileDialog *self,
+   else
+     {
+ invalid_file:
+-      if (g_set_object (&self->initial_file, NULL))
++      if (g_set_object (&self->initial_file, (gpointer) NULL))
+         g_object_notify_by_pspec (G_OBJECT (self), properties[PROP_INITIAL_FILE]);
+-      if (g_set_object (&self->initial_folder, NULL))
++      if (g_set_object (&self->initial_folder, (gpointer) NULL))
+         g_object_notify_by_pspec (G_OBJECT (self), properties[PROP_INITIAL_FOLDER]);
+       if (g_set_str (&self->initial_name, NULL))
+         g_object_notify_by_pspec (G_OBJECT (self), properties[PROP_INITIAL_NAME]);
+diff --git a/gtk/gtkwindow.c b/gtk/gtkwindow.c
+index 66ec112..a81b246 100644
+--- a/gtk/gtkwindow.c
++++ b/gtk/gtkwindow.c
+@@ -2143,7 +2143,7 @@ gtk_window_root_set_focus (GtkRoot   *root,
+ 
+   if (priv->focus_widget)
+     old_focus = g_object_ref (priv->focus_widget);
+-  g_set_object (&priv->focus_widget, NULL);
++  g_set_object (&priv->focus_widget, (gpointer) NULL);
+ 
+   if (old_focus)
+     gtk_widget_set_has_focus (old_focus, FALSE);
+diff --git a/gtk/inspector/general.c b/gtk/inspector/general.c
+index 76138be..0f29ee0 100644
+--- a/gtk/inspector/general.c
++++ b/gtk/inspector/general.c
+@@ -49,8 +49,10 @@
+ #ifdef GDK_WINDOWING_X11
+ #include "x11/gdkx.h"
+ #include <epoxy/glx.h>
++#ifdef HAVE_EGL
+ #include <epoxy/egl.h>
+ #endif
++#endif
+ 
+ #ifdef GDK_WINDOWING_WIN32
+ #include "win32/gdkwin32.h"
+@@ -67,7 +69,9 @@
+ 
+ #ifdef GDK_WINDOWING_WAYLAND
+ #include "wayland/gdkwayland.h"
++#ifdef HAVE_EGL
+ #include <epoxy/egl.h>
++#endif
+ #include <xkbcommon/xkbcommon.h>
+ #include "wayland/gdkdisplay-wayland.h"
+ #include "wayland/gdkwaylandcolor-private.h"
+@@ -606,7 +610,7 @@ append_extensions (GtkStringList *list,
+   g_strfreev (items);
+ }
+ 
+-#if defined(GDK_WINDOWING_X11) || defined(GDK_WINDOWING_WAYLAND) || (defined(GDK_WINDOWING_WIN32) && defined(GDK_WIN32_ENABLE_EGL))
++#if defined(HAVE_EGL) && (defined(GDK_WINDOWING_X11) || defined(GDK_WINDOWING_WAYLAND) || (defined(GDK_WINDOWING_WIN32) && defined(GDK_WIN32_ENABLE_EGL)))
+ static EGLDisplay
+ get_egl_display (GdkDisplay *display)
+ {
+@@ -669,7 +673,7 @@ init_gl (GtkInspectorGeneral *gen)
+       gtk_string_list_append (GTK_STRING_LIST (gen->gl_extensions_list), gl_ext);
+     }
+ 
+-#if defined(GDK_WINDOWING_X11) || defined(GDK_WINDOWING_WAYLAND) || (defined(GDK_WINDOWING_WIN32) && defined(GDK_WIN32_ENABLE_EGL))
++#if defined(HAVE_EGL) && (defined(GDK_WINDOWING_X11) || defined(GDK_WINDOWING_WAYLAND) || (defined(GDK_WINDOWING_WIN32) && defined(GDK_WIN32_ENABLE_EGL)))
+   EGLDisplay egl_display = get_egl_display (gen->display);
+   if (egl_display)
+     {
+@@ -782,7 +786,7 @@ dump_gl (GdkDisplay *display,
+ 
+   ext = g_string_new ("");
+ 
+-#if defined(GDK_WINDOWING_X11) || defined(GDK_WINDOWING_WAYLAND) || (defined(GDK_WINDOWING_WIN32) && defined(GDK_WIN32_ENABLE_EGL))
++#if defined(HAVE_EGL) && (defined(GDK_WINDOWING_X11) || defined(GDK_WINDOWING_WAYLAND) || (defined(GDK_WINDOWING_WIN32) && defined(GDK_WIN32_ENABLE_EGL)))
+   EGLDisplay egl_display = get_egl_display (display);
+   if (egl_display)
+     {
+diff --git a/meson.build b/meson.build
+index 440494a..8120200 100644
+--- a/meson.build
++++ b/meson.build
+@@ -447,8 +447,8 @@ pangocairo_dep    = dependency('pangocairo', version: pango_req)
+ pixbuf_dep        = dependency('gdk-pixbuf-2.0', version: gdk_pixbuf_req,
+                                default_options: ['png=enabled', 'jpeg=enabled', 'gif=enabled', 'builtin_loaders=all', 'man=false'])
+ png_dep           = dependency('libpng', 'png')
+-tiff_dep          = dependency('libtiff-4', 'tiff')
+-jpeg_dep          = dependency('libjpeg', 'jpeg')
++tiff_dep          = dependency('libtiff-4', 'tiff', required: false)
++jpeg_dep          = dependency('libjpeg', 'jpeg', required: false)
+ 
+ epoxy_dep         = dependency('epoxy', version: epoxy_req)
+ xkbdep            = dependency('xkbcommon', version: xkbcommon_req, required: wayland_enabled)
+-- 
+2.53.0
+

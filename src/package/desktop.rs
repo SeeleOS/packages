@@ -646,6 +646,7 @@ make_package!(
             configure_meson(
                 self,
                 ctx,
+                Vec::new(),
                 vec![
                     "-Dbuild-testsuite=false".to_string(),
                     "-Dbuild-examples=false".to_string(),
