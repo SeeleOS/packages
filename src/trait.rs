@@ -6,7 +6,7 @@ use std::sync::{Mutex, OnceLock};
 
 use crate::command::{CommandSpec, run_output};
 use crate::fs_utils::{ensure_dir, list_patch_files};
-use crate::install::deploy_sysroot;
+use crate::install::{deploy_sysroot, sync_staging_sysroot};
 use crate::misc::with_stamp;
 use crate::types::{Action, Context, PackagePaths, Result};
 
@@ -161,12 +161,14 @@ pub trait Package {
     fn run(&self, ctx: &Context, action: Action) -> Result<()> {
         match action {
             Action::Install => {
+                sync_staging_sysroot(ctx)?;
                 self.make(ctx)?;
                 deploy_sysroot(ctx)
             }
             Action::Clean => self.clean(ctx),
             Action::RebuildOnly => {
                 self.clean(ctx)?;
+                sync_staging_sysroot(ctx)?;
                 self.make(ctx)?;
                 deploy_sysroot(ctx)
             }

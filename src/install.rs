@@ -151,6 +151,20 @@ pub fn deploy_sysroot(ctx: &Context) -> Result<()> {
     umount_sysroot()
 }
 
+pub fn sync_staging_sysroot(ctx: &Context) -> Result<()> {
+    let staging = sysroot_dir(ctx)?;
+    let deployed = deployed_sysroot_dir(ctx)?;
+
+    ensure_dir(&staging)?;
+    mount_sysroot()?;
+    run(CommandSpec::new("rsync")
+        .arg("-a")
+        .arg("--delete")
+        .arg("--keep-dirlinks")
+        .arg(format!("{}/", deployed.display()))
+        .arg(&staging))
+}
+
 pub fn prune_libtool_archives(root: &std::path::Path) -> Result<()> {
     let mut files = Vec::new();
     walk_files(root, &mut files)?;
