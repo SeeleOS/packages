@@ -20,6 +20,7 @@ use std::process;
 
 use package::bash::Bash;
 use package::busybox::Busybox;
+use package::clang::Clang;
 use package::ncurses::Ncurses;
 use package::st::St;
 use package::tinycc::TinyCc;
@@ -51,6 +52,7 @@ fn package_by_name(name: &str) -> Option<Box<dyn Package>> {
     match name {
         "bash" => Some(Box::new(Bash)),
         "busybox" => Some(Box::new(Busybox)),
+        "clang" | "llvm-clang" => Some(Box::new(Clang)),
         "ncurses" => Some(Box::new(Ncurses)),
         "tcc" | "tinycc" => Some(Box::new(TinyCc)),
         "dwm" => Some(Box::new(Dwm)),
